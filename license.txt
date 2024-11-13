@@ -1,0 +1,8 @@
+FINAL FANTASY XI - ONLINE for Vanadiel XI private server 
+
+Official Update Client: October 2024
+
+For the french traduction, please visit this link:
+https://github.com/AlexandreCA/Traduction-francaise-du-client-FFXI/releases/tag/update
+
+Feel free to contribuate at this projet if you want. Thank you.
