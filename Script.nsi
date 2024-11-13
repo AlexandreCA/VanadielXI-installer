@@ -1,7 +1,3 @@
-;NSIS Modern User Interface
-;Written by Joost Verburg
-;ZLIB License Copyright (c) 2018-2020 Eden Server
-
 ;--------------------------------
 ;Include Modern UI
 
@@ -11,9 +7,9 @@
   !include "StrContains.nsh"
 
   !define MUI_ICON "installer.ico"
-  !define MUI_LANGDLL_WINDOWTITLE "Installer"
+  !define MUI_LANGDLL_WINDOWTITLE "FINAL FANTASY XI ONLINE"
   !define MUI_WELCOMEFINISHPAGE_BITMAP "background.bmp"
-  !define MUI_WELCOMEPAGE_TITLE "Installer"
+  !define MUI_WELCOMEPAGE_TITLE "FINAL FANTASY XI ONLINE"
 
   !define MUI_LICENSEPAGE_CHECKBOX
 
@@ -24,8 +20,8 @@
 ;General
 
   ;Name and file
-  Name "XI Game"
-  OutFile "Installer.exe"
+  Name "FINAL FANTASY XI"
+  OutFile "FINAL FANTASY XI.exe"
 
   ;Default installation folder
   InstallDir "$PROGRAMFILES\PlayOnline"
@@ -44,20 +40,65 @@
 ;--------------------------------
 ;Pages
 Function DependenciesPage
-  
-  File /oname=$TEMP\VS2010.exe VS2010.exe
-  ExecWait "$TEMP\VS2010.exe /install /passive /norestart"
-  File /oname=$TEMP\VS2012.exe VS2012.exe
-  ExecWait "$TEMP\VS2012.exe /install /passive /norestart"
-  File /oname=$TEMP\VS2013.exe VS2013.exe
-  ExecWait "$TEMP\VS2013.exe /install /passive /norestart"
-  File /oname=$TEMP\VS2015.exe VS2015.exe
-  ExecWait "$TEMP\VS2015.exe /install /passive /norestart"
-  File /oname=$TEMP\dotNetFx40_Full_x86_x64.exe dotNetFx40_Full_x86_x64.exe
-  ExecWait "$TEMP\dotNetFx40_Full_x86_x64.exe /install /passive /norestart"
-  File /oname=$TEMP\dotNet45.exe dotNet45.exe
-  ExecWait "$TEMP\dotNet45.exe /install /passive /norestart"
+  nsExec::ExecToStack "cmd /c mkdir $TEMP"
+
+  ; Vérifier et installer Visual Studio 2010
+  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\10.0" "InstallDir"
+  ${If} $0 == ""
+    File /oname=$TEMP\VS2010.exe VS2010.exe
+    ExecWait "$TEMP\VS2010.exe /install /passive /norestart"
+  ${Else}
+    DetailPrint "Visual Studio 2010 is already installed."
+  ${EndIf}
+
+  ; Vérifier et installer Visual Studio 2012
+  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0" "InstallDir"
+  ${If} $0 == ""
+    File /oname=$TEMP\VS2012.exe VS2012.exe
+    ExecWait "$TEMP\VS2012.exe /install /passive /norestart"
+  ${Else}
+    DetailPrint "Visual Studio 2012 is already installed."
+  ${EndIf}
+
+  ; Vérifier et installer Visual Studio 2013
+  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\12.0" "InstallDir"
+  ${If} $0 == ""
+    File /oname=$TEMP\VS2013.exe VS2013.exe
+    ExecWait "$TEMP\VS2013.exe /install /passive /norestart"
+  ${Else}
+    DetailPrint "Visual Studio 2013 is already installed."
+  ${EndIf}
+
+  ; Vérifier et installer Visual Studio 2015
+  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0" "InstallDir"
+  ${If} $0 == ""
+    File /oname=$TEMP\VS2015.exe VS2015.exe
+    ExecWait "$TEMP\VS2015.exe /install /passive /norestart"
+  ${Else}
+    DetailPrint "Visual Studio 2015 is already installed."
+  ${EndIf}
+
+  ; Vérifier et installer .NET Framework 4.0
+  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" "Release"
+  ${If} $0 == ""
+    File /oname=$TEMP\dotNetFx40_Full_x86_x64.exe dotNetFx40_Full_x86_x64.exe
+    ExecWait "$TEMP\dotNetFx40_Full_x86_x64.exe /install /passive /norestart"
+  ${Else}
+    DetailPrint ".NET Framework 4.0 is already installed."
+  ${EndIf}
+
+  ; Vérifier et installer .NET Framework 4.5
+  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" "Release"
+  ${If} $0 < 378389 ; Version 4.5 ou supérieure
+    File /oname=$TEMP\dotNet45.exe dotNet45.exe
+    ExecWait "$TEMP\dotNet45.exe /install /passive /norestart"
+  ${Else}
+    DetailPrint ".NET Framework 4.5 or higher is already installed."
+  ${EndIf}
+
+  ; Activer DirectPlay
   nsExec::Exec "dism /online /Enable-Feature /FeatureName:DirectPlay /All"
+
 
 FunctionEnd
 
@@ -88,18 +129,23 @@ FunctionEnd
   !insertmacro MUI_LANGUAGE "English"
 
 ;--------------------------------
-;Installer Sections
-
 Section "XIInstaller" XIInstaller
+  ; Définir la taille approximative de l'installation
   AddSize 14000000
+
+  ; Définir le chemin d'installation
   SetOutPath "$INSTDIR"
 
-  ;Add files
+  ; Ajouter l'icône de l'installateur
   File installer.ico
 
-
-  DetailPrint "Extracting game files, please wait..."
-  ${GetExePath} $R0 ;
+  ; Afficher un message à l'utilisateur pendant l'extraction
+  DetailPrint "Décompression du jeu, patientez..."
+  
+  ; Obtenir le chemin de l'exécutable
+  ${GetExePath} $R0
+  
+  ; Extraire les fichiers de données
   Nsis7z::ExtractWithDetails "$R0\data.pak" "Installing game files %s..."
   
 
@@ -282,8 +328,8 @@ Section "Uninstall"
 
 
   RMDir /r "$INSTDIR\"
-  Delete "$DESKTOP\Play XI.lnk"
-  RMDir /r "$SMPROGRAMS\XIGAME"
+  Delete "$DESKTOP\Play FINAL FANTASY XI XI.lnk"
+  RMDir /r "$SMPROGRAMS\FINAL FANTASY XI"
 
   DeleteRegKey /ifempty HKCU "Software\XIINSTALLER"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\XIINSTALLER"
