@@ -1,44 +1,43 @@
 ;--------------------------------
-;Include Modern UI
+; Include Modern UI
 
-  !include "MUI2.nsh"
-  !include "LogicLib.nsh"
-  !include "FileFunc.nsh"
-  !include "StrContains.nsh"
+!include "MUI2.nsh"
+!include "LogicLib.nsh"
+!include "FileFunc.nsh"
+!include "StrContains.nsh"
 
-  !define MUI_ICON "installer.ico"
-  !define MUI_LANGDLL_WINDOWTITLE "FINAL FANTASY XI ONLINE"
-  !define MUI_WELCOMEFINISHPAGE_BITMAP "background.bmp"
-  !define MUI_WELCOMEPAGE_TITLE "FINAL FANTASY XI ONLINE"
+!define MUI_ICON "installer.ico"
+!define MUI_LANGDLL_WINDOWTITLE "FINAL FANTASY XI ONLINE"
+!define MUI_WELCOMEFINISHPAGE_BITMAP "background.bmp"
+!define MUI_WELCOMEPAGE_TITLE "FINAL FANTASY XI ONLINE"
+!define MUI_LICENSEPAGE_CHECKBOX
 
-  !define MUI_LICENSEPAGE_CHECKBOX
-
-  !addplugindir "..\Release"
-  !addplugindir "."
-
-;--------------------------------
-;General
-
-  ;Name and file
-  Name "FINAL FANTASY XI"
-  OutFile "FINAL FANTASY XI.exe"
-
-  ;Default installation folder
-  InstallDir "$PROGRAMFILES\PlayOnline"
-
-  ;Get installation folder from registry if available
-  InstallDirRegKey HKCU "Software\FinalFantasyXI" "InstallPath"
-
-  ;Request application privileges for Windows Vista
-  RequestExecutionLevel admin
+!addplugindir "..\Release"
+!addplugindir "."
 
 ;--------------------------------
-;Interface Settings
+; General
 
-  !define MUI_ABORTWARNING
+; Name and file
+Name "FINAL FANTASY XI"
+OutFile "FINAL FANTASY XI.exe"
+
+; Default installation folder
+InstallDir "$PROGRAMFILES\PlayOnline"
+
+; Get installation folder from registry if available
+InstallDirRegKey HKCU "Software\FinalFantasyXI" "InstallPath"
+
+; Request application privileges for Windows Vista
+RequestExecutionLevel admin
 
 ;--------------------------------
-;Pages
+; Interface Settings
+
+!define MUI_ABORTWARNING
+
+;--------------------------------
+; Pages
 Function DependenciesPage
   nsExec::ExecToStack "cmd /c mkdir $TEMP"
 
@@ -99,7 +98,6 @@ Function DependenciesPage
   ; Activer DirectPlay
   nsExec::Exec "dism /online /Enable-Feature /FeatureName:DirectPlay /All"
 
-
 FunctionEnd
 
 ; No need to compress twice!
@@ -112,21 +110,36 @@ Function DependenciesLeave
 FunctionEnd
 
 
-  !insertmacro MUI_PAGE_WELCOME
-  !insertmacro MUI_PAGE_LICENSE "license.txt"
-  Page Custom DependenciesPage DependenciesLeave
-  !insertmacro MUI_PAGE_DIRECTORY
-  !insertmacro MUI_PAGE_INSTFILES
-  !insertmacro MUI_PAGE_FINISH
-  ;!insertmacro MUI_UNPAGE_WELCOME
-  ;!insertmacro MUI_UNPAGE_CONFIRM
-  !insertmacro MUI_UNPAGE_INSTFILES
-  !insertmacro MUI_UNPAGE_FINISH
+!insertmacro MUI_PAGE_WELCOME
+!insertmacro MUI_PAGE_LICENSE "license.txt"
+Page Custom DependenciesPage DependenciesLeave
+!insertmacro MUI_PAGE_DIRECTORY
+!insertmacro MUI_PAGE_INSTFILES
+!insertmacro MUI_PAGE_FINISH
+;!insertmacro MUI_UNPAGE_WELCOME
+;!insertmacro MUI_UNPAGE_CONFIRM
+!insertmacro MUI_UNPAGE_INSTFILES
+!insertmacro MUI_UNPAGE_FINISH
 
 ;--------------------------------
-;Languages
+; Languages
 
-  !insertmacro MUI_LANGUAGE "English"
+!insertmacro MUI_LANGUAGE "English"
+!insertmacro MUI_LANGUAGE "French"
+
+# Définir la page de sélection de langue (géré par MUI2)
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW LangPageShow
+Page directory
+Page instfiles
+
+; Personnaliser le texte des boîtes de dialogue en fonction de la langue sélectionnée
+Function LangPageShow
+    ${If} ${Language} == ${LANG_ENGLISH}
+        MessageBox MB_OK "Welcome to the installer"
+    ${ElseIf} ${Language} == ${LANG_FRENCH}
+        MessageBox MB_OK "Bienvenue dans l'installateur"
+    ${EndIf}
+FunctionEnd
 
 ;--------------------------------
 Section "XIInstaller" XIInstaller
@@ -140,7 +153,7 @@ Section "XIInstaller" XIInstaller
   File installer.ico
 
   ; Afficher un message à l'utilisateur pendant l'extraction
-  DetailPrint "Décompression du jeu, patientez..."
+  DetailPrint "Decompression du jeu, patientez..."
   
   ; Obtenir le chemin de l'exécutable
   ${GetExePath} $R0
