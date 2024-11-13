@@ -39,6 +39,7 @@ We are not affiliated, associated, authorized, endorsed by, or in any way offici
 ### License
 
 Copyright (c) 2018-2020 Eden Server
+Copyright (c) 2024 VanadielXI server 
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
