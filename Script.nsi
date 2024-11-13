@@ -27,7 +27,7 @@
   InstallDir "$PROGRAMFILES\PlayOnline"
 
   ;Get installation folder from registry if available
-  InstallDirRegKey HKCU "Software\XIGAME" "InstallPath"
+  InstallDirRegKey HKCU "Software\FinalFantasyXI" "InstallPath"
 
   ;Request application privileges for Windows Vista
   RequestExecutionLevel admin
@@ -146,22 +146,22 @@ Section "XIInstaller" XIInstaller
   ${GetExePath} $R0
   
   ; Extraire les fichiers de données
-  Nsis7z::ExtractWithDetails "$R0\data.pak" "Installing game files %s..."
+  Nsis7z::ExtractWithDetails "$R0\data.pak" "Installation des fichiers du jeu %s..."
   
 
-  DetailPrint "Updating registry settings..."
+  DetailPrint "Mise à jour des paramètres du registre..."
   
   SetRegView 64
 
   ;Store installation folder
-  WriteRegStr HKCU "Software\XIGAME" "InstallPath" "$INSTDIR"
+  WriteRegStr HKCU "Software\FinalFantasyXI" "InstallPath" "$INSTDIR"
 
   ;Register with Windows
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\XIGAME" "DisplayName" "Uninstall XI"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\XIGAME" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\XIGAME" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\XIGAME" "InstallLocation" "$\"$INSTDIR$\""
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\XIGAME" "DisplayIcon" "$\"$INSTDIR\installer.ico$\""
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FinalFantasyXI" "DisplayName" "Uninstall XI"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FinalFantasyXI" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FinalFantasyXI" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FinalFantasyXI" "InstallLocation" "$\"$INSTDIR$\""
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FinalFantasyXI" "DisplayIcon" "$\"$INSTDIR\installer.ico$\""
 
   ;Set registry values
   WriteRegStr HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS" "CommonFilesFolder" "$PROGRAMFILES\Common Files\"
@@ -281,18 +281,18 @@ Section "XIInstaller" XIInstaller
   RegDLL "$INSTDIR\SquareEnix\TetraMaster\TM.dll"
 
   ;Create uninstaller
-  DetailPrint "Creating Uninstaller..."
-  WriteUninstaller "$INSTDIR\Uninstall.exe"
+  DetailPrint "Création d'un programme de désinstallation..."
+  WriteUninstaller "$INSTDIR\Uninstall FINAL FANTASY XI.exe"
 
   ;create desktop shortcut
-  DetailPrint "Building Shortcuts..."
+  DetailPrint "Créer des raccourcis..."
   SetOutPath "$INSTDIR\Ashita\"
-  CreateShortCut "$DESKTOP\Play XI.lnk" "$INSTDIR\Ashita\Ashita.exe" "" "$INSTDIR\installer.ico"
+  CreateShortCut "$DESKTOP\Play FINAL FANTASY XI.lnk" "$INSTDIR\Ashita\Ashita.exe" "" "$INSTDIR\installer.ico"
 
   ;create start menu shortcut
-  createDirectory "$SMPROGRAMS\XIGAME"
-  createShortCut "$SMPROGRAMS\XIGAME\Play XI.lnk" "$INSTDIR\Ashita\Ashita.exe" "" "$INSTDIR\installer.ico"
-  createShortCut "$SMPROGRAMS\XIGAME\Uninstall XI.lnk" "$INSTDIR\Uninstall.exe"
+  createDirectory "$SMPROGRAMS\FinalFantasyXI"
+  createShortCut "$SMPROGRAMS\FinalFantasyXI\FINAL FANTASY XI.lnk" "$INSTDIR\Ashita\Ashita.exe" "" "$INSTDIR\installer.ico"
+  createShortCut "$SMPROGRAMS\FinalFantasyXI\Uninstall FINAL FANTASY XI.lnk" "$INSTDIR\Uninstall FINAL FANTASY XI.exe"
 
 SectionEnd
 
