@@ -1,101 +1,62 @@
-;--------------------------------
-; Include Modern UI
-
-!include "MUI2.nsh"
-!include "LogicLib.nsh"
-!include "FileFunc.nsh"
-!include "StrContains.nsh"
-
-!define MUI_ICON "installer.ico"
-!define MUI_LANGDLL_WINDOWTITLE "FINAL FANTASY XI ONLINE"
-!define MUI_WELCOMEFINISHPAGE_BITMAP "background.bmp"
-!define MUI_WELCOMEPAGE_TITLE "FINAL FANTASY XI ONLINE"
-!define MUI_LICENSEPAGE_CHECKBOX
-
-!addplugindir "..\Release"
-!addplugindir "."
+;NSIS Modern User Interface
+;Written by Joost Verburg
+;ZLIB License Copyright (c) 2018-2020 Eden Server
 
 ;--------------------------------
-; General
+;Include Modern UI
 
-; Name and file
-Name "FINAL FANTASY XI"
-OutFile "FINAL FANTASY XI.exe"
+  !include "MUI2.nsh"
+  !include "LogicLib.nsh"
+  !include "FileFunc.nsh"
+  !include "StrContains.nsh"
 
-; Default installation folder
-InstallDir "$PROGRAMFILES\PlayOnline"
+  !define MUI_ICON "installer.ico"
+  !define MUI_LANGDLL_WINDOWTITLE "Installer"
+  !define MUI_WELCOMEFINISHPAGE_BITMAP "background.bmp"
+  !define MUI_WELCOMEPAGE_TITLE "Installer"
 
-; Get installation folder from registry if available
-InstallDirRegKey HKCU "Software\FinalFantasyXI" "InstallPath"
+  !define MUI_LICENSEPAGE_CHECKBOX
 
-; Request application privileges for Windows Vista
-RequestExecutionLevel admin
-
-;--------------------------------
-; Interface Settings
-
-!define MUI_ABORTWARNING
+  !addplugindir "..\Release"
+  !addplugindir "."
 
 ;--------------------------------
-; Pages
+;General
+
+  ;Name and file
+  Name "FINAL FANTASY XI "
+  OutFile "FINAL FANTASY XI.exe"
+
+  ;Default installation folder
+  InstallDir "$PROGRAMFILES\PlayOnline"
+
+  ;Get installation folder from registry if available
+  InstallDirRegKey HKCU "Software\FINAL FANTASY XI" "InstallPath"
+
+  ;Request application privileges for Windows Vista
+  RequestExecutionLevel admin
+
+;--------------------------------
+;Interface Settings
+
+  !define MUI_ABORTWARNING
+
+;--------------------------------
+;Pages
 Function DependenciesPage
-  nsExec::ExecToStack "cmd /c mkdir $TEMP"
-
-  ; Vérifier et installer Visual Studio 2010
-  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\10.0" "InstallDir"
-  ${If} $0 == ""
-    File /oname=$TEMP\VS2010.exe VS2010.exe
-    ExecWait "$TEMP\VS2010.exe /install /passive /norestart"
-  ${Else}
-    DetailPrint "Visual Studio 2010 is already installed."
-  ${EndIf}
-
-  ; Vérifier et installer Visual Studio 2012
-  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0" "InstallDir"
-  ${If} $0 == ""
-    File /oname=$TEMP\VS2012.exe VS2012.exe
-    ExecWait "$TEMP\VS2012.exe /install /passive /norestart"
-  ${Else}
-    DetailPrint "Visual Studio 2012 is already installed."
-  ${EndIf}
-
-  ; Vérifier et installer Visual Studio 2013
-  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\12.0" "InstallDir"
-  ${If} $0 == ""
-    File /oname=$TEMP\VS2013.exe VS2013.exe
-    ExecWait "$TEMP\VS2013.exe /install /passive /norestart"
-  ${Else}
-    DetailPrint "Visual Studio 2013 is already installed."
-  ${EndIf}
-
-  ; Vérifier et installer Visual Studio 2015
-  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0" "InstallDir"
-  ${If} $0 == ""
-    File /oname=$TEMP\VS2015.exe VS2015.exe
-    ExecWait "$TEMP\VS2015.exe /install /passive /norestart"
-  ${Else}
-    DetailPrint "Visual Studio 2015 is already installed."
-  ${EndIf}
-
-  ; Vérifier et installer .NET Framework 4.0
-  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" "Release"
-  ${If} $0 == ""
-    File /oname=$TEMP\dotNetFx40_Full_x86_x64.exe dotNetFx40_Full_x86_x64.exe
-    ExecWait "$TEMP\dotNetFx40_Full_x86_x64.exe /install /passive /norestart"
-  ${Else}
-    DetailPrint ".NET Framework 4.0 is already installed."
-  ${EndIf}
-
-  ; Vérifier et installer .NET Framework 4.5
-  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" "Release"
-  ${If} $0 < 378389 ; Version 4.5 ou supérieure
-    File /oname=$TEMP\dotNet45.exe dotNet45.exe
-    ExecWait "$TEMP\dotNet45.exe /install /passive /norestart"
-  ${Else}
-    DetailPrint ".NET Framework 4.5 or higher is already installed."
-  ${EndIf}
-
-  ; Activer DirectPlay
+  
+  File /oname=$TEMP\VS2010.exe VS2010.exe
+  ExecWait "$TEMP\VS2010.exe /install /passive /norestart"
+  File /oname=$TEMP\VS2012.exe VS2012.exe
+  ExecWait "$TEMP\VS2012.exe /install /passive /norestart"
+  File /oname=$TEMP\VS2013.exe VS2013.exe
+  ExecWait "$TEMP\VS2013.exe /install /passive /norestart"
+  File /oname=$TEMP\VS2015.exe VS2015.exe
+  ExecWait "$TEMP\VS2015.exe /install /passive /norestart"
+  File /oname=$TEMP\dotNetFx40_Full_x86_x64.exe dotNetFx40_Full_x86_x64.exe
+  ExecWait "$TEMP\dotNetFx40_Full_x86_x64.exe /install /passive /norestart"
+  File /oname=$TEMP\dotNet45.exe dotNet45.exe
+  ExecWait "$TEMP\dotNet45.exe /install /passive /norestart"
   nsExec::Exec "dism /online /Enable-Feature /FeatureName:DirectPlay /All"
 
 FunctionEnd
@@ -110,71 +71,51 @@ Function DependenciesLeave
 FunctionEnd
 
 
-!insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "license.txt"
-Page Custom DependenciesPage DependenciesLeave
-!insertmacro MUI_PAGE_DIRECTORY
-!insertmacro MUI_PAGE_INSTFILES
-!insertmacro MUI_PAGE_FINISH
-;!insertmacro MUI_UNPAGE_WELCOME
-;!insertmacro MUI_UNPAGE_CONFIRM
-!insertmacro MUI_UNPAGE_INSTFILES
-!insertmacro MUI_UNPAGE_FINISH
+  !insertmacro MUI_PAGE_WELCOME
+  !insertmacro MUI_PAGE_LICENSE "license.txt"
+  Page Custom DependenciesPage DependenciesLeave
+  !insertmacro MUI_PAGE_DIRECTORY
+  !insertmacro MUI_PAGE_INSTFILES
+  !insertmacro MUI_PAGE_FINISH
+  ;!insertmacro MUI_UNPAGE_WELCOME
+  ;!insertmacro MUI_UNPAGE_CONFIRM
+  !insertmacro MUI_UNPAGE_INSTFILES
+  !insertmacro MUI_UNPAGE_FINISH
 
 ;--------------------------------
-; Languages
+;Languages
 
-!insertmacro MUI_LANGUAGE "English"
-!insertmacro MUI_LANGUAGE "French"
-
-# Définir la page de sélection de langue (géré par MUI2)
-!define MUI_PAGE_CUSTOMFUNCTION_SHOW LangPageShow
-Page directory
-Page instfiles
-
-; Personnaliser le texte des boîtes de dialogue en fonction de la langue sélectionnée
-Function LangPageShow
-    ${If} ${Language} == ${LANG_ENGLISH}
-        MessageBox MB_OK "Welcome to the installer"
-    ${ElseIf} ${Language} == ${LANG_FRENCH}
-        MessageBox MB_OK "Bienvenue dans l'installateur"
-    ${EndIf}
-FunctionEnd
+  !insertmacro MUI_LANGUAGE "English"
 
 ;--------------------------------
+;Installer Sections
+
 Section "XIInstaller" XIInstaller
-  ; Définir la taille approximative de l'installation
   AddSize 14000000
-
-  ; Définir le chemin d'installation
   SetOutPath "$INSTDIR"
 
-  ; Ajouter l'icône de l'installateur
+  ;Add files
   File installer.ico
 
-  ; Afficher un message à l'utilisateur pendant l'extraction
-  DetailPrint "Decompression du jeu, patientez..."
-  
-  ; Obtenir le chemin de l'exécutable
-  ${GetExePath} $R0
-  
-  ; Extraire les fichiers de données
-  Nsis7z::ExtractWithDetails "$R0\data.pak" "Installation des fichiers du jeu %s..."
+
+  DetailPrint "Extracting game files, please wait..."
+  ${GetExePath} $R0 ;
+  Nsis7z::ExtractWithDetails "$R0\data.pak" "Installing game files %s..."
   
 
-  DetailPrint "Mise à jour des paramètres du registre..."
+  DetailPrint "Updating registry settings..."
   
   SetRegView 64
 
   ;Store installation folder
-  WriteRegStr HKCU "Software\FinalFantasyXI" "InstallPath" "$INSTDIR"
+  WriteRegStr HKCU "Software\FINAL FANTASY XI" "InstallPath" "$INSTDIR"
 
   ;Register with Windows
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FinalFantasyXI" "DisplayName" "Uninstall XI"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FinalFantasyXI" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FinalFantasyXI" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FinalFantasyXI" "InstallLocation" "$\"$INSTDIR$\""
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FinalFantasyXI" "DisplayIcon" "$\"$INSTDIR\installer.ico$\""
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FINAL FANTASY XI" "DisplayName" "Uninstall FINAL FANTASY XI"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FINAL FANTASY XI" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FINAL FANTASY XI" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FINAL FANTASY XI" "InstallLocation" "$\"$INSTDIR$\""
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FINAL FANTASY XI" "DisplayIcon" "$\"$INSTDIR\installer.ico$\""
 
   ;Set registry values
   WriteRegStr HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS" "CommonFilesFolder" "$PROGRAMFILES\Common Files\"
@@ -294,18 +235,18 @@ Section "XIInstaller" XIInstaller
   RegDLL "$INSTDIR\SquareEnix\TetraMaster\TM.dll"
 
   ;Create uninstaller
-  DetailPrint "Création d'un programme de désinstallation..."
+  DetailPrint "Creating Uninstaller..."
   WriteUninstaller "$INSTDIR\Uninstall FINAL FANTASY XI.exe"
 
   ;create desktop shortcut
-  DetailPrint "Créer des raccourcis..."
+  DetailPrint "Building Shortcuts..."
   SetOutPath "$INSTDIR\Ashita\"
   CreateShortCut "$DESKTOP\Play FINAL FANTASY XI.lnk" "$INSTDIR\Ashita\Ashita.exe" "" "$INSTDIR\installer.ico"
 
   ;create start menu shortcut
-  createDirectory "$SMPROGRAMS\FinalFantasyXI"
-  createShortCut "$SMPROGRAMS\FinalFantasyXI\FINAL FANTASY XI.lnk" "$INSTDIR\Ashita\Ashita.exe" "" "$INSTDIR\installer.ico"
-  createShortCut "$SMPROGRAMS\FinalFantasyXI\Uninstall FINAL FANTASY XI.lnk" "$INSTDIR\Uninstall FINAL FANTASY XI.exe"
+  createDirectory "$SMPROGRAMS\FINAL FANTASY XI"
+  createShortCut "$SMPROGRAMS\FINAL FANTASY XI\Play FINAL FANTASY XI.lnk" "$INSTDIR\Ashita\Ashita.exe" "" "$INSTDIR\installer.ico"
+  createShortCut "$SMPROGRAMS\FINAL FANTASY XI\Uninstall FINAL FANTASY XI.lnk" "$INSTDIR\Uninstall FINAL FANTASY XI.exe"
 
 SectionEnd
 
@@ -341,11 +282,11 @@ Section "Uninstall"
 
 
   RMDir /r "$INSTDIR\"
-  Delete "$DESKTOP\Play FINAL FANTASY XI XI.lnk"
+  Delete "$DESKTOP\Play FINAL FANTASY XI.lnk"
   RMDir /r "$SMPROGRAMS\FINAL FANTASY XI"
 
-  DeleteRegKey /ifempty HKCU "Software\XIINSTALLER"
-  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\XIINSTALLER"
+  DeleteRegKey /ifempty HKCU "Software\FINAL FANTASY XI"
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FINAL FANTASY XI"
   DeleteRegKey HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS"
 
 SectionEnd
