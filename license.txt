@@ -2,7 +2,6 @@ FINAL FANTASY XI - ONLINE for Vanadiel XI private server
 
 Official Update Client: October 2024
 
-For the french traduction, please visit this link:
-https://github.com/AlexandreCA/Traduction-francaise-du-client-FFXI/releases/tag/update
+I am not affiliated, associated, authorized, endorsed by, or in any way officially connected with Square Enix, Final Fantasy, FFXI, or any of its subsidiaries. All FFXI content and images copyright 2002-2025 SQUARE ENIX CO., LTD. FINAL FANTASY is a registered trademark of Square Enix Co., Ltd.
 
-Feel free to contribuate at this projet if you want. Thank you.
+Copyright (c) 2023-2025 Fox_mulder for the french translation for Vanadiel XI private server only!
