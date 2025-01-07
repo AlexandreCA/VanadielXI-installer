@@ -9,7 +9,8 @@ OutFile "FFXI_Updater.exe"
 
 ; Set default installation directory
 InstallDirRegKey HKCU "Software\FINAL FANTASY XI" "InstallPath"
-InstallDir "$PROGRAMFILES\PlayOnline\SquareEnix\FINAL FANTASY XI"
+InstallDir "$PROGRAMFILES\PlayOnline"
+RequestExecutionLevel admin
 
 ; Pages
 !insertmacro MUI_PAGE_DIRECTORY  
