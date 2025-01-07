@@ -1,42 +1,25 @@
 ; Installer de mise à jour indépendant pour FINAL FANTASY XI
 
-;--------------------------------
-;Include Modern UI
+; Include Modern UI
 !include "MUI2.nsh"
-!include "LogicLib.nsh"
-!include "FileFunc.nsh"
 
-;--------------------------------
-;General
 Name "FINAL FANTASY XI Updater"
 OutFile "FFXI_Updater.exe"
-RequestExecutionLevel admin
-
-;--------------------------------
-;Interface Settings
 !define MUI_ABORTWARNING
 
-;;--------------------------------
-;Set default installation directory
-; Vérifie si le répertoire d'installation est dans le registre
+; Set default installation directory
 InstallDirRegKey HKCU "Software\FINAL FANTASY XI" "InstallPath"
-
-; Si l'entrée de registre n'existe pas, on définit un répertoire par défaut
-; Le répertoire par défaut est PlayOnline/SquareEnix/FINAL FANTASY XI
 InstallDir "$PROGRAMFILES\PlayOnline\SquareEnix\FINAL FANTASY XI"
 
-;--------------------------------
-;Pages
+; Pages
 !insertmacro MUI_PAGE_DIRECTORY  
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 
-;--------------------------------
-;Languages
+; Languages
 !insertmacro MUI_LANGUAGE "French"
 
-;--------------------------------
-;Installer Sections
+; Installer Sections
 Section "Update" Update
   ; URL du fichier zip de mise à jour sur GitHub
   StrCpy $0 "https://github.com/AlexandreCA/Traduction-francaise-du-client-FFXI/releases/download/update/generated_dats.zip"
@@ -44,12 +27,34 @@ Section "Update" Update
   ; Fichier temporaire pour stocker le fichier zip téléchargé
   StrCpy $1 "$TEMP\generated_dats.zip"
 
-  ; Téléchargez le fichier zip
-  nsExec::ExecToLog "powershell -Command (New-Object System.Net.WebClient).DownloadFile('$0', '$1')"
+  ; Téléchargez le fichier zip avec inetc
+  inetc::get "$0" "$1" /END
+  Pop $R0 ;Get the return value
+  StrCmp $R0 "OK" downloadSucceeded 0
+    MessageBox MB_OK "Échec du téléchargement du fichier : $R0"
+    Goto end
+  downloadSucceeded:
+    MessageBox MB_OK "Téléchargement réussi."
+    
+    ; Vérifiez la taille du fichier téléchargé
+    FileOpen $R1 "$1" r
+    FileSeek $R1 0 END $R2
+    FileClose $R1
+    StrCmp $R2 "0" fileEmpty +1
+      MessageBox MB_OK "Taille du fichier téléchargé : $R2 bytes."
+      Goto unzip
+    fileEmpty:
+      MessageBox MB_OK "Le fichier téléchargé semble être vide."
+      Goto end
 
-  ; Décompressez le fichier zip
-  nsExec::ExecToLog 'powershell -Command "Expand-Archive -Path $1 -DestinationPath $INSTDIR -Force"'
+  unzip:
+    ; Décompressez le fichier zip avec 7z
+    ExecWait '"7z.exe" x "$1" -o"$INSTDIR" -y' $R0
+    StrCmp $R0 "0" unzipSucceeded 0
+      MessageBox MB_OK "Échec de la décompression du fichier. Code de retour : $R0"
+      Goto end
+  unzipSucceeded:
+    MessageBox MB_OK "Mise à jour terminée. Fichier décompressé dans $INSTDIR."
 
-  ; Message de confirmation
-  MessageBox MB_OK "Mise à jour terminée."
+  end:
 SectionEnd
