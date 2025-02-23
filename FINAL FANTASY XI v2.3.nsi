@@ -275,6 +275,7 @@ Section "XIInstaller" XIInstaller
   File "installer.ico"
 
   DetailPrint "Extracting game files from data.pak..."
+  SetOutPath "$INSTDIR\SquareEnix\FINAL FANTASY XI"
   IfFileExists "$EXEDIR\data.pak" 0 data_missing
     Nsis7z::ExtractWithDetails "$EXEDIR\data.pak" "Installing game files %s..."
   Goto data_done
@@ -287,6 +288,7 @@ Section "XIInstaller" XIInstaller
   ${If} $FrenchTranslation == "yes"
     DetailPrint "Attempting to extract lang.pak..."
     IfFileExists "$EXEDIR\lang.pak" 0 lang_missing
+      SetOutPath "$INSTDIR\SquareEnix\FINAL FANTASY XI"
       Nsis7z::ExtractWithDetails "$EXEDIR\lang.pak" "Installing French translation %s..."
       WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "Language" 0x00000002
       DetailPrint "French translation installed."
@@ -301,6 +303,7 @@ Section "XIInstaller" XIInstaller
   ${If} $InstallHDTextures == "yes"
     DetailPrint "Attempting to extract hd_textures.pak..."
     IfFileExists "$EXEDIR\hd_textures.pak" 0 hd_missing
+      SetOutPath "$INSTDIR\SquareEnix\FINAL FANTASY XI"
       Nsis7z::ExtractWithDetails "$EXEDIR\hd_textures.pak" "Installing HD textures %s..."
       DetailPrint "HD textures installed."
     Goto hd_done
