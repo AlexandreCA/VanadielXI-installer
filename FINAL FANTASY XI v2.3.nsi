@@ -36,7 +36,7 @@ Var InstallDotNet45
 Var InstallDirectPlay
 Var InstallHDTextures
 
-; Fonction récursive pour copier tous les fichiers sans préserver les sous-dossiers
+; Fonction récursive pour copier tous les fichiers et écraser les existants
 Function CopyFilesRecursively
   Exch $R0 ; Récupère le chemin de base depuis la pile
   Push $R1 ; Handle pour FindFirst/FindNext
@@ -54,8 +54,12 @@ Function CopyFilesRecursively
       Pop $R0 ; Restaurer $R0 après l'appel récursif
       Goto next
     file:
-      ; Si c'est un fichier, le copier directement dans la destination
-      CopyFiles /SILENT "$R0\$R2" "$INSTDIR\SquareEnix\FINAL FANTASY XI"
+      ; Si c'est un fichier, supprimer le fichier existant dans la destination s'il existe
+      IfFileExists "$INSTDIR\SquareEnix\FINAL FANTASY XI\$R2" 0 copy
+        Delete "$INSTDIR\SquareEnix\FINAL FANTASY XI\$R2"
+      copy:
+      ; Copier le fichier directement dans la destination
+      CopyFiles /SILENT /FILESONLY "$R0\$R2" "$INSTDIR\SquareEnix\FINAL FANTASY XI"
     next:
       FindNext $R1 $R2
       Goto loop
@@ -249,8 +253,10 @@ Page Custom TranslationPage TranslationPageLeave
 Section "XIInstaller" XIInstaller
   AddSize 14000000
   SetOutPath "$INSTDIR"
-
   File "installer.ico"
+
+  ; Créer le répertoire FINAL FANTASY XI
+  CreateDirectory "$INSTDIR\SquareEnix\FINAL FANTASY XI"
 
   DetailPrint "Extracting game files from data.pak..."
   IfFileExists "$EXEDIR\archives\data.pak" 0 data_missing
