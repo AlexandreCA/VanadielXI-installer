@@ -36,11 +36,12 @@ Var InstallDotNet45
 Var InstallDirectPlay
 Var InstallHDTextures
 
-; Fonction récursive pour copier tous les fichiers directement dans la destination et écraser les existants
+; Fonction récursive pour copier tous les fichiers directement dans la destination, sans sous-dossiers, et écraser les existants
 Function CopyFilesRecursively
   Exch $R0 ; Récupère le chemin de base depuis la pile
   Push $R1 ; Handle pour FindFirst/FindNext
   Push $R2 ; Nom du fichier ou dossier trouvé
+  Push $R3 ; Nom du fichier sans chemin
 
   FindFirst $R1 $R2 "$R0\*.*"
   loop:
@@ -51,12 +52,14 @@ Function CopyFilesRecursively
       ; Si c'est un dossier, appeler récursivement
       Push "$R0\$R2"
       Call CopyFilesRecursively
-      Pop $R0 ; Restaurer $R0 après l'appel récursif
+      Pop $R0 ; Restaurer $R0 après l’appel récursif
       Goto next
     file:
-      ; Si c'est un fichier, supprimer le fichier existant dans la destination s'il existe
-      IfFileExists "$INSTDIR\SquareEnix\FINAL FANTASY XI\$R2" 0 copy
-        Delete "$INSTDIR\SquareEnix\FINAL FANTASY XI\$R2"
+      ; Extraire uniquement le nom du fichier sans le chemin
+      ${GetFileName} "$R0\$R2" $R3
+      ; Si le fichier existe déjà dans la destination, le supprimer
+      IfFileExists "$INSTDIR\SquareEnix\FINAL FANTASY XI\$R3" 0 copy
+        Delete "$INSTDIR\SquareEnix\FINAL FANTASY XI\$R3"
       copy:
       ; Copier le fichier directement dans la destination
       CopyFiles /SILENT "$R0\$R2" "$INSTDIR\SquareEnix\FINAL FANTASY XI"
@@ -66,6 +69,7 @@ Function CopyFilesRecursively
   done:
     FindClose $R1
 
+  Pop $R3
   Pop $R2
   Pop $R1
   Pop $R0
