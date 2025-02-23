@@ -36,7 +36,7 @@ Var InstallDotNet45
 Var InstallDirectPlay
 Var InstallHDTextures
 
-; Fonction récursive pour copier tous les fichiers et écraser les existants
+; Fonction récursive pour copier tous les fichiers directement dans la destination et écraser les existants
 Function CopyFilesRecursively
   Exch $R0 ; Récupère le chemin de base depuis la pile
   Push $R1 ; Handle pour FindFirst/FindNext
@@ -59,7 +59,7 @@ Function CopyFilesRecursively
         Delete "$INSTDIR\SquareEnix\FINAL FANTASY XI\$R2"
       copy:
       ; Copier le fichier directement dans la destination
-      CopyFiles /SILENT /FILESONLY "$R0\$R2" "$INSTDIR\SquareEnix\FINAL FANTASY XI"
+      CopyFiles /SILENT "$R0\$R2" "$INSTDIR\SquareEnix\FINAL FANTASY XI"
     next:
       FindNext $R1 $R2
       Goto loop
