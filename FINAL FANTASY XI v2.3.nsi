@@ -276,8 +276,8 @@ Section "XIInstaller" XIInstaller
 
   DetailPrint "Extracting game files from data.pak..."
   SetOutPath "$INSTDIR\SquareEnix\FINAL FANTASY XI"
-  IfFileExists "$EXEDIR\data.pak" 0 data_missing
-    Nsis7z::ExtractWithDetails "$EXEDIR\data.pak" "Installing game files %s..."
+  IfFileExists "$EXEDIR\archives\data.pak" 0 data_missing
+    Nsis7z::ExtractWithDetails "$EXEDIR\archives\data.pak" "Installing game files %s..."
   Goto data_done
   data_missing:
     MessageBox MB_OK|MB_ICONSTOP "Error: data.pak not found in $EXEDIR!"
@@ -287,9 +287,9 @@ Section "XIInstaller" XIInstaller
   DetailPrint "Checking French translation selection: $FrenchTranslation"
   ${If} $FrenchTranslation == "yes"
     DetailPrint "Attempting to extract lang.pak..."
-    IfFileExists "$EXEDIR\lang.pak" 0 lang_missing
+    IfFileExists "$EXEDIR\archives\lang.pak" 0 lang_missing
       SetOutPath "$INSTDIR\SquareEnix\FINAL FANTASY XI"
-      Nsis7z::ExtractWithDetails "$EXEDIR\lang.pak" "Installing French translation %s..."
+      Nsis7z::ExtractWithDetails "$EXEDIR\archives\lang.pak" "Installing French translation %s..."
       WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "Language" 0x00000002
       DetailPrint "French translation installed."
     Goto lang_done
@@ -302,9 +302,9 @@ Section "XIInstaller" XIInstaller
 
   ${If} $InstallHDTextures == "yes"
     DetailPrint "Attempting to extract hd_textures.pak..."
-    IfFileExists "$EXEDIR\hd_textures.pak" 0 hd_missing
+    IfFileExists "$EXEDIR\archives\hd_textures.pak" 0 hd_missing
       SetOutPath "$INSTDIR\SquareEnix\FINAL FANTASY XI"
-      Nsis7z::ExtractWithDetails "$EXEDIR\hd_textures.pak" "Installing HD textures %s..."
+      Nsis7z::ExtractWithDetails "$EXEDIR\archives\hd_textures.pak" "Installing HD textures %s..."
       DetailPrint "HD textures installed."
     Goto hd_done
     hd_missing:
