@@ -80,17 +80,42 @@ Page Custom TranslationPage TranslationPageLeave
 !insertmacro MUI_LANGUAGE "French"
 
 Function .onInit
+  StrCpy $IsUpdate "no"  ; Par défaut, nouvelle installation
+  StrCpy $INSTDIR "$PROGRAMFILES\PlayOnline"  ; Chemin par défaut
+
+  ; Étape 1 : Vérifier le registre HKCU
   ClearErrors
   ReadRegStr $0 HKCU "Software\FINAL FANTASY XI" "InstallPath"
-  ${If} ${Errors}
-  ${OrIfNot} ${FileExists} "$PROGRAMFILES\PlayOnline\SquareEnix\FINAL FANTASY XI"
-    StrCpy $IsUpdate "no"
-    DetailPrint "No existing installation detected. Proceeding with new install."
+  ${IfNot} ${Errors}
+    ${If} ${FileExists} "$0\SquareEnix\FINAL FANTASY XI\*.*"
+      StrCpy $IsUpdate "yes"
+      StrCpy $INSTDIR "$0"
+      DetailPrint "Installation existante détectée via le registre à : $INSTDIR"
+    ${Else}
+      DetailPrint "Clé de registre trouvée ($0), mais dossier introuvable."
+    ${EndIf}
   ${Else}
-    StrCpy $IsUpdate "yes"
-    StrCpy $INSTDIR "$PROGRAMFILES\PlayOnline\SquareEnix\FINAL FANTASY XI"
-    DetailPrint "Existing installation detected at $INSTDIR. Proceeding with update."
+    DetailPrint "Aucune clé de registre trouvée dans HKCU."
   ${EndIf}
+
+  ; Étape 2 : Vérifier le chemin par défaut si le registre échoue
+  ${If} $IsUpdate == "no"
+    ${If} ${FileExists} "$PROGRAMFILES\PlayOnline\SquareEnix\FINAL FANTASY XI\*.*"
+      StrCpy $IsUpdate "yes"
+      StrCpy $INSTDIR "$PROGRAMFILES\PlayOnline"
+      DetailPrint "Installation existante détectée dans le chemin par défaut : $INSTDIR"
+    ${Else}
+      DetailPrint "Aucune installation détectée dans le chemin par défaut."
+    ${EndIf}
+  ${EndIf}
+
+  ; Étape 3 : Message final
+  ${If} $IsUpdate == "yes"
+    DetailPrint "Mise à jour détectée. Installation dans : $INSTDIR"
+  ${Else}
+    DetailPrint "Aucune installation existante. Nouvelle installation dans : $INSTDIR"
+  ${EndIf}
+
   !insertmacro MUI_LANGDLL_DISPLAY
 FunctionEnd
 
@@ -382,39 +407,77 @@ Section "XIInstaller" XIInstaller
 
   DetailPrint "Checking French translation selection: $FrenchTranslation"
   ${If} $FrenchTranslation == "yes"
-    DetailPrint "Extracting lang.pak to $GameDir..."
+    DetailPrint "Extracting lang.pak to temporary directory..."
     IfFileExists "$EXEDIR\archives\lang.pak" 0 lang_missing
       CreateDirectory "$TEMP\lang_temp"
       Nsis7z::Extract "$EXEDIR\archives\lang.pak" "-o$TEMP\lang_temp"
-      DetailPrint "Copying French translation ROM files to $GameDir..."
-      CopyFiles "$TEMP\lang_temp\*.*" "$GameDir"
+      DetailPrint "Checking extracted files in $TEMP\lang_temp..."
+      FindFirst $0 $1 "$TEMP\lang_temp\*.*"
+      check_loop:
+        StrCmp $1 "" check_done
+        StrCmp $1 "." check_next
+        StrCmp $1 ".." check_next
+        DetailPrint "Found file: $TEMP\lang_temp\$1"
+      check_next:
+        FindNext $0 $1
+        Goto check_loop
+      check_done:
+        FindClose $0
+      DetailPrint "Installing French translation files to $GameDir..."
+      SetOutPath "$GameDir"
+      File /r "$TEMP\lang_temp\*.*"
+      DetailPrint "Verifying files in $GameDir..."
+      ${If} ${FileExists} "$GameDir\*.*"
+        DetailPrint "Files successfully installed to $GameDir."
+      ${Else}
+        DetailPrint "Warning: No files found in $GameDir after installation!"
+      ${EndIf}
       DetailPrint "Cleaning up temporary directory $TEMP\lang_temp..."
       RMDir /r "$TEMP\lang_temp"
       ${If} $IsUpdate == "no"
         WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "Language" 0x00000002
       ${EndIf}
-      DetailPrint "French translation ROM files installed/updated in $GameDir"
+      DetailPrint "French translation files installed/updated in $GameDir"
       Goto lang_done
     lang_missing:
-      MessageBox MB_OK|MB_ICONSTOP "Error: lang.pak not found in $EXEDIR\archives! French translation not installed."
+      MessageBox MB_OK|MB_ICONSTOP "Erreur : lang.pak introuvable dans $EXEDIR\archives ! Traduction française non installée."
     lang_done:
   ${Else}
     DetailPrint "French translation skipped by user."
   ${EndIf}
 
   ${If} $InstallHDTextures == "yes"
-    DetailPrint "Extracting hd_textures.pak to $GameDir..."
+    DetailPrint "Extracting hd_textures.pak to temporary directory..."
     IfFileExists "$EXEDIR\archives\hd_textures.pak" 0 hd_missing
       CreateDirectory "$TEMP\hd_textures_temp"
       Nsis7z::Extract "$EXEDIR\archives\hd_textures.pak" "-o$TEMP\hd_textures_temp"
-      DetailPrint "Copying HD texture ROM files to $GameDir..."
-      CopyFiles "$TEMP\hd_textures_temp\*.*" "$GameDir"
+      DetailPrint "Checking extracted files in $TEMP\hd_textures_temp..."
+      FindFirst $0 $1 "$TEMP\hd_textures_temp\*.*"
+      hd_check_loop:
+        StrCmp $1 "" hd_check_done
+        StrCmp $1 "." hd_check_next
+        StrCmp $1 ".." hd_check_next
+        DetailPrint "Found file: $TEMP\hd_textures_temp\$1"
+      hd_check_next:
+        FindNext $0 $1
+        Goto hd_check_loop
+      hd_check_done:
+        FindClose $0
+      DetailPrint "Installing HD texture files to $GameDir..."
+      SetOutPath "$GameDir"
+      File /r "$TEMP\hd_textures_temp\*.*"
+      DetailPrint "Verifying files in $GameDir..."
+      ${If} ${FileExists} "$GameDir\*.*"
+        DetailPrint "Files successfully installed to $GameDir."
+      ${Else}
+        DetailPrint "Warning: No files found in $GameDir after installation!"
+      ${EndIf}
       DetailPrint "Cleaning up temporary directory $TEMP\hd_textures_temp..."
       RMDir /r "$TEMP\hd_textures_temp"
-      DetailPrint "HD texture ROM files installed/updated in $GameDir"
+      DetailPrint "HD texture files installed/updated in $GameDir"
       Goto hd_done
     hd_missing:
-      MessageBox MB_OK|MB_ICONSTOP "Error: hd_textures.pak not found in $EXEDIR\archives! HD textures not installed."
+      MessageBox MB_OK|MB_ICONSTOP "Erreur : hd_textures.pak introuvable dans $EXEDIR\archives ! Textures HD non installées."
     hd_done:
   ${Else}
     DetailPrint "HD textures pack skipped by user."
