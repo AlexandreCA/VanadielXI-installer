@@ -1,5 +1,9 @@
 ## **Vanadiel_XI Installer**
 
+### What's new in version 2.0?
+1. The installer detected if yes or not, the dependances are installed.
+2. XI Loader is correctly detected doesnt matter the installation style.
+
 ### Development Setup
 1. Download and include the full (not web) Visual Studio 2010, 2012, 2013, 2015 and 2017 runtime installers. Rename them VSxxxx.exe as appropriate (Ex. VS2010.exe for the Visual C++ Redistributable for Visual Studio 2010 x86). Links are included in the next section.
 2. Download Microsoft .NET Framework 4 and name `dotNetFx40_Full_x86_x64.exe`.
