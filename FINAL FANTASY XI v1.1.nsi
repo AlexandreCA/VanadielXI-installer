@@ -1,6 +1,6 @@
 ﻿;NSIS Modern User Interface
-;Written by Fox_Mulder
-;ZLIB License Copyright (c) 2023-2025 Vanadiel XI 
+;Written by Joost Verburg
+;ZLIB License Copyright (c) 2018-2020 Eden Server
 
 ;--------------------------------
 ;Include Modern UI
@@ -76,8 +76,6 @@ FunctionEnd
   !insertmacro MUI_PAGE_DIRECTORY
   !insertmacro MUI_PAGE_INSTFILES
   !insertmacro MUI_PAGE_FINISH
-  ;!insertmacro MUI_UNPAGE_WELCOME
-  ;!insertmacro MUI_UNPAGE_CONFIRM
   !insertmacro MUI_UNPAGE_INSTFILES
   !insertmacro MUI_UNPAGE_FINISH
 
@@ -211,24 +209,29 @@ Section "XIInstaller" XIInstaller
     IfFileExists "$INSTDIR\..\Ashita\config\boot\Private Server.xml" 0 config_missing
       ClearErrors
       FileOpen $0 "$INSTDIR\..\Ashita\config\boot\Private Server.xml" r
-      StrCpy $1 ""
+      StrCpy $1 "" ; Contiendra le chemin trouvé dans boot_file
+      StrCpy $2 "" ; Contiendra chaque ligne lue
 read_loop:
       FileRead $0 $2
       ${If} ${Errors}
         Goto read_done
       ${EndIf}
-      Push $2
+      ; Utilisation de StrContains pour vérifier si la ligne contient <setting name="boot_file">
+      Push "$2"
       Push '<setting name="boot_file">'
-      Call StrStr
+      Call StrContains
       Pop $3
-      ${If} $3 != -1
+      ${If} $3 != ""
+        ; Extraire le contenu entre <setting name="boot_file"> et </setting>
         StrLen $4 '<setting name="boot_file">'
         StrCpy $1 $2 "" $4
-        Push $1
+        Push "$1"
         Push "</setting>"
-        Call StrStr
+        Call StrContains
         Pop $5
-        StrCpy $1 $1 $5
+        ${If} $5 != ""
+          StrCpy $1 $5
+        ${EndIf}
         Goto read_done
       ${EndIf}
       Goto read_loop
