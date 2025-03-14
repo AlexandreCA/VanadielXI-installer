@@ -1,6 +1,6 @@
 ﻿;NSIS Modern User Interface
-;Written by Joost Verburg
-;ZLIB License Copyright (c) 2018-2020 Eden Server
+;Written by Fox_Mulder
+;ZLIB License Copyright (c) 2023-2025 Vanadiel_XI Server
 
 ;--------------------------------
 ;Include Modern UI
