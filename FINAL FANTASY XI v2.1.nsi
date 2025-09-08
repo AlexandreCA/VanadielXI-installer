@@ -1,4 +1,4 @@
-﻿;NSIS Modern User Interface
+;NSIS Modern User Interface
 ;Written by Fox_Mulder
 ;ZLIB License Copyright (c) 2023-2025 Vanadiel_XI Server
 
@@ -160,7 +160,7 @@ Section "XIInstaller" XIInstaller
   SetOutPath "$INSTDIR"
 
   Var /GLOBAL IsUpdate
-  IfFileExists "$INSTDIR\Ashita\Ashita.exe" 0 not_update
+  IfFileExists "$INSTDIR\Windower4\windower.exe" 0 not_update
     StrCpy $IsUpdate "yes"
     Goto update_check_done
   not_update:
@@ -261,16 +261,16 @@ Section "XIInstaller" XIInstaller
   WriteRegBin HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\SystemInfo\QCheck" "LastMeasurementTime" ""
 
   ${If} $IsUpdate == "yes"
-    CreateDirectory "$INSTDIR\..\Ashita\config\boot"
+    CreateDirectory "$INSTDIR\..\Windower4"
   ${Else}
-    CreateDirectory "$INSTDIR\Ashita\config\boot"
+    CreateDirectory "$INSTDIR\Windower4"
   ${EndIf}
 
   ${If} $IsUpdate == "yes"
-    DetailPrint "Existing installation detected, checking Ashita configuration..."
-    IfFileExists "$INSTDIR\..\Ashita\config\boot\Private Server.xml" 0 config_missing
+    DetailPrint "Existing installation detected, checking Windower4 configuration..."
+    IfFileExists "$INSTDIR\..\Windower4\settings.xml" 0 config_missing
       ClearErrors
-      FileOpen $0 "$INSTDIR\..\Ashita\config\boot\Private Server.xml" r
+      FileOpen $0 "$INSTDIR\..\Windower4\settings.xml" r
       StrCpy $1 ""
       StrCpy $2 ""
 read_loop:
@@ -279,14 +279,14 @@ read_loop:
         Goto read_done
       ${EndIf}
       Push "$2"
-      Push '<setting name="boot_file">'
+      Push "<executable>"
       Call StrContains
       Pop $3
       ${If} $3 != ""
-        StrLen $4 '<setting name="boot_file">'
+        StrLen $4 "<executable>"
         StrCpy $1 $2 "" $4
         Push "$1"
-        Push "</setting>"
+        Push "</executable>"
         Call StrContains
         Pop $5
         ${If} $5 != ""
@@ -297,77 +297,97 @@ read_loop:
       Goto read_loop
 read_done:
       FileClose $0
-      StrCpy $3 "$INSTDIR\..\Ashita\ffxi-bootmod\xiloader.exe"
+      StrCpy $3 "$INSTDIR\..\Windower4\xiloader.exe"
       ${If} $1 != $3
-        DetailPrint "Ashita configuration incorrect (boot_file: $1), updating to $3..."
+        DetailPrint "Windower4 configuration incorrect (executable: $1), updating to $3..."
         Goto write_config
       ${Else}
-        DetailPrint "Ashita configuration is correct (boot_file: $1)."
+        DetailPrint "Windower4 configuration is correct (executable: $1)."
         Goto config_done
       ${EndIf}
     config_missing:
-      DetailPrint "Ashita configuration file missing, creating it..."
+      DetailPrint "Windower4 configuration file missing, creating it..."
       Goto write_config
   ${Else}
-    DetailPrint "New installation, creating Ashita configuration..."
+    DetailPrint "New installation, creating Windower4 configuration..."
     Goto write_config
   ${EndIf}
 
 write_config:
-  ${If} $IsUpdate == "yes"
-    FileOpen $0 "$INSTDIR\..\Ashita\config\boot\Private Server.xml" w
-  ${Else}
-    FileOpen $0 "$INSTDIR\Ashita\config\boot\Private Server.xml" w
-  ${EndIf}
-  FileWrite $0 '<?xml version="1.0" encoding="utf-8" standalone="yes"?>$\r$\n'
-  FileWrite $0 "<settings>$\r$\n"
-  FileWrite $0 '  <setting name="config_name">VanadielXI (Private Server)</setting>$\r$\n'
-  FileWrite $0 '  <setting name="auto_close">True</setting>$\r$\n'
-  FileWrite $0 '  <setting name="language">2</setting>$\r$\n'
-  FileWrite $0 '  <setting name="pol_version">2</setting>$\r$\n'
-  FileWrite $0 '  <setting name="test_server">False</setting>$\r$\n'
-  FileWrite $0 '  <setting name="log_level">4</setting>$\r$\n'
-  FileWrite $0 '  <setting name="windowed">True</setting>$\r$\n'
-  FileWrite $0 '  <setting name="show_border">False</setting>$\r$\n'
-  FileWrite $0 '  <setting name="unhook_mouse">False</setting>$\r$\n'
-  FileWrite $0 '  <setting name="window_x">1920</setting>$\r$\n'
-  FileWrite $0 '  <setting name="window_y">1080</setting>$\r$\n'
-  FileWrite $0 '  <setting name="startpos_x">-1</setting>$\r$\n'
-  FileWrite $0 '  <setting name="startpos_y">-1</setting>$\r$\n'
-  FileWrite $0 '  <setting name="background_x">1920</setting>$\r$\n'
-  FileWrite $0 '  <setting name="background_y">1080</setting>$\r$\n'
-  FileWrite $0 '  <setting name="menu_x">1920</setting>$\r$\n'
-  FileWrite $0 '  <setting name="menu_y">1080</setting>$\r$\n'
-  ${If} $IsUpdate == "yes"
-    FileWrite $0 '  <setting name="boot_file">$INSTDIR\..\Ashita\ffxi-bootmod\xiloader.exe</setting>$\r$\n'
-  ${Else}
-    FileWrite $0 '  <setting name="boot_file">$INSTDIR\Ashita\ffxi-bootmod\xiloader.exe</setting>$\r$\n'
-  ${EndIf}
-  FileWrite $0 '  <setting name="boot_command">--user XX --pass XX --hairpin</setting>$\r$\n'
-  FileWrite $0 '  <setting name="startup_script">Default.txt</setting>$\r$\n'
-  FileWrite $0 '  <setting name="d3d_presentparams_buffercount">1</setting>$\r$\n'
-  FileWrite $0 '  <setting name="d3d_presentparams_swapeffect">1</setting>$\r$\n'
-  FileWrite $0 '  <setting name="game_mipmapping">-1</setting>$\r$\n'
-  FileWrite $0 '  <setting name="game_bumpmapping">-1</setting>$\r$\n'
-  FileWrite $0 '  <setting name="game_gammabase">0</setting>$\r$\n'
-  FileWrite $0 '  <setting name="game_envanimation">-1</setting>$\r$\n'
-  FileWrite $0 '  <setting name="game_texturecompression">-1</setting>$\r$\n'
-  FileWrite $0 '  <setting name="game_mapcompression">-1</setting>$\r$\n'
-  FileWrite $0 '  <setting name="game_fontcompression">-1</setting>$\r$\n'
-  FileWrite $0 '  <setting name="game_soundenabled">-1</setting>$\r$\n'
-  FileWrite $0 '  <setting name="game_soundalwayson">-1</setting>$\r$\n'
-  FileWrite $0 '  <setting name="game_showopeningmovie">-1</setting>$\r$\n'
-  FileWrite $0 '  <setting name="game_simplecharcreation">-1</setting>$\r$\n'
-  FileWrite $0 '  <setting name="game_stablegraphics">-1</setting>$\r$\n'
-  FileWrite $0 "</settings>$\r$\n"
-  FileClose $0
-  ${If} $IsUpdate == "yes"
-    DetailPrint "Private Server.xml created/updated in $INSTDIR\..\Ashita\config\boot with dynamic path."
-  ${Else}
-    DetailPrint "Private Server.xml created/updated in $INSTDIR\Ashita\config\boot with dynamic path."
-  ${EndIf}
-config_done:
-
+  IfFileExists "$INSTDIR\Windower4\xiloader.exe" 0 no_xiloader
+    DetailPrint "Creating settings.xml in $INSTDIR\Windower4"
+    FileOpen $0 "$INSTDIR\Windower4\settings.xml" w
+    ${If} ${Errors}
+      DetailPrint "Error: Failed to open $INSTDIR\Windower4\settings.xml for writing."
+      Goto no_xiloader
+    ${EndIf}
+    ; Forcer UTF-8 avec BOM
+    FileWriteByte $0 0xEF
+    FileWriteByte $0 0xBB
+    FileWriteByte $0 0xBF
+    FileWrite $0 `<?xml version="1.0" encoding="utf-8"?>$\r$\n`
+    FileWrite $0 `<settings>$\r$\n`
+    FileWrite $0 `  <launcher>$\r$\n`
+    FileWrite $0 `    <branch>stable</branch>$\r$\n`
+    FileWrite $0 `  </launcher>$\r$\n`
+    FileWrite $0 `  <autoload>$\r$\n`
+    FileWrite $0 `    <addon>ChatLink</addon>$\r$\n`
+    FileWrite $0 `    <addon>chatPorter</addon>$\r$\n`
+    FileWrite $0 `    <addon>xivbar</addon>$\r$\n`
+    FileWrite $0 `    <addon>Trusts</addon>$\r$\n`
+    FileWrite $0 `    <addon>lottery</addon>$\r$\n`
+    FileWrite $0 `    <addon>itemizer</addon>$\r$\n`
+    FileWrite $0 `    <addon>invtracker</addon>$\r$\n`
+    FileWrite $0 `    <addon>giltracker</addon>$\r$\n`
+    FileWrite $0 `    <addon>EasyNuke</addon>$\r$\n`
+    FileWrite $0 `    <addon>Debuffed</addon>$\r$\n`
+    FileWrite $0 `    <addon>AutoRA</addon>$\r$\n`
+    FileWrite $0 `    <addon>barfiller</addon>$\r$\n`
+    FileWrite $0 `    <plugin>FFXIDB</plugin>$\r$\n`
+    FileWrite $0 `    <plugin>MipmapFix</plugin>$\r$\n`
+    FileWrite $0 `    <plugin>Timers</plugin>$\r$\n`
+    FileWrite $0 `    <plugin>Binder</plugin>$\r$\n`
+    FileWrite $0 `  </autoload>$\r$\n`
+    FileWrite $0 `  <profile name="VanadielXI">$\r$\n`
+    FileWrite $0 `    <consolekey>Insert</consolekey>$\r$\n`
+    FileWrite $0 `    <mipmaplevel>6</mipmaplevel>$\r$\n`
+    FileWrite $0 `    <uiscale>1</uiscale>$\r$\n`
+    FileWrite $0 `    <alwaysenablegamepad>false</alwaysenablegamepad>$\r$\n`
+    FileWrite $0 `    <args>--server 192.168.1.15 --user alexandre --pass alexandre --hairpin</args>$\r$\n`
+    FileWrite $0 `    <executable>xiloader.exe</executable>$\r$\n`
+    FileWrite $0 `  </profile>$\r$\n`
+    FileWrite $0 `</settings>$\r$\n`
+    FileClose $0
+    ${If} ${Errors}
+      DetailPrint "Error: Failed to write to $INSTDIR\Windower4\settings.xml."
+    ${Else}
+      DetailPrint "Successfully created/updated $INSTDIR\Windower4\settings.xml."
+      ; Vérifier le contenu du fichier
+      FileOpen $0 "$INSTDIR\Windower4\settings.xml" r
+      ${If} ${Errors}
+        DetailPrint "Error: Failed to read $INSTDIR\Windower4\settings.xml for verification."
+      ${Else}
+        StrCpy $1 ""
+        read_verify_loop:
+          FileRead $0 $2
+          ${If} ${Errors}
+            Goto read_verify_done
+          ${EndIf}
+          StrCpy $1 "$1$2"
+          Goto read_verify_loop
+        read_verify_done:
+        FileClose $0
+        DetailPrint "settings.xml content: $1"
+      ${EndIf}
+      ; Définir les permissions pour tous les utilisateurs
+      ExecWait 'icacls "$INSTDIR\Windower4\settings.xml" /grant Users:F'
+      DetailPrint "Set full permissions for Users on $INSTDIR\Windower4\settings.xml."
+    ${EndIf}
+    Goto config_done
+  no_xiloader:
+    DetailPrint "Error: xiloader.exe not found in $INSTDIR\Windower4. Skipping settings.xml creation."
+  config_done:
+  
   DetailPrint "Registering libraries..."
   RegDLL "$INSTDIR\SquareEnix\FINAL FANTASY XI\FFXi.dll"
   RegDLL "$INSTDIR\SquareEnix\FINAL FANTASY XI\FFXiMain.dll"
@@ -395,11 +415,11 @@ config_done:
   WriteUninstaller "$INSTDIR\Uninstall FINAL FANTASY XI.exe"
 
   DetailPrint "Building Shortcuts..."
-  SetOutPath "$INSTDIR\Ashita\"
-  CreateShortCut "$DESKTOP\Play FINAL FANTASY XI.lnk" "$INSTDIR\Ashita\Ashita.exe" "" "$INSTDIR\installer.ico"
+  SetOutPath "$INSTDIR\Windower4\"
+  CreateShortCut "$DESKTOP\Play FINAL FANTASY XI.lnk" "$INSTDIR\Windower4\windower.exe" "" "$INSTDIR\installer.ico"
 
   createDirectory "$SMPROGRAMS\FINAL FANTASY XI"
-  createShortCut "$SMPROGRAMS\FINAL FANTASY XI\Play FINAL FANTASY XI.lnk" "$INSTDIR\Ashita\Ashita.exe" "" "$INSTDIR\installer.ico"
+  createShortCut "$SMPROGRAMS\FINAL FANTASY XI\Play FINAL FANTASY XI.lnk" "$INSTDIR\Windower4\windower.exe" "" "$INSTDIR\installer.ico"
   createShortCut "$SMPROGRAMS\FINAL FANTASY XI\Uninstall FINAL FANTASY XI.lnk" "$INSTDIR\Uninstall FINAL FANTASY XI.exe"
 
 SectionEnd
@@ -432,12 +452,10 @@ Section "Uninstall"
   UnRegDLL "$INSTDIR\SquareEnix\PlayOnlineViewer\viewer\contents\PolContents.dll"
   UnRegDLL "$INSTDIR\SquareEnix\PlayOnlineViewer\viewer\contents\polcontentsINT.dll"
 
-  Delete "$INSTDIR\Ashita\config\boot\Private Server.xml"
-  RMDir /r "$INSTDIR\Ashita\config\boot"
-  RMDir /r "$INSTDIR\Ashita\config"
-  RMDir /r "$INSTDIR\Ashita"
+  Delete "$INSTDIR\Windower4\settings.xml"
+  RMDir /r "$INSTDIR\Windower4"
 
-  RMDir /r "$INSTDIR\"
+  RMDir /r "$INSTDIR"
   Delete "$DESKTOP\Play FINAL FANTASY XI.lnk"
   RMDir /r "$SMPROGRAMS\FINAL FANTASY XI"
 
