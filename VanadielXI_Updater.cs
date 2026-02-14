@@ -15,7 +15,7 @@ namespace VanadielXI_Updater
     class Program
     {
         // MODIFIÉ: Utiliser HTTP pour le serveur public en attendant SSL
-        private static readonly string UPDATE_SERVER_PUBLIC = "http://vanadielxi-updates.duckdns.org/updates/update_server.php";
+        private static readonly string UPDATE_SERVER_PUBLIC = "https://boxproton.org/update_server.php";
         private static readonly string UPDATE_SERVER_LOCAL = "http://192.168.1.17/updates/update_server.php";
         private static string UPDATE_SERVER = ""; // Sera déterminé automatiquement
         
