@@ -274,6 +274,8 @@ Section "XIInstaller" XIInstaller
   ; Si c'est une mise à jour uniquement, sauter l'extraction
   ${If} $InstallType == "update"
     DetailPrint "Mode mise à jour: conservation des fichiers existants..."
+    ; Définir quand même $R0 pour le HD Pack
+    ${GetExePath} $R0
     Goto skip_extraction
   ${EndIf}
 
@@ -281,22 +283,26 @@ Section "XIInstaller" XIInstaller
   ${GetExePath} $R0
   Nsis7z::ExtractWithDetails "$R0\data.pak" "Installing game files %s..."
 
-  ; Vérifier si l'utilisateur a coché le pack HD
-  ${NSD_GetState} $InstallHDPack $0
-  ${If} $0 == ${BST_CHECKED}
-    DetailPrint "Installing HD Pack..."
-    IfFileExists "$R0\hd_pack.pak" 0 no_hd_pack
-      Nsis7z::ExtractWithDetails "$R0\hd_pack.pak" "Installing HD textures %s..."
-      DetailPrint "HD Pack installed successfully!"
-      Goto hd_pack_done
-    no_hd_pack:
-      DetailPrint "Warning: HD Pack file (hd_pack.pak) not found, skipping..."
-    hd_pack_done:
-  ${Else}
-    DetailPrint "HD Pack installation skipped by user."
-  ${EndIf}
-
   skip_extraction:
+
+  ; Installation automatique du HD Pack si disponible
+  DetailPrint "Checking for HD Pack..."
+  ${GetExePath} $R0
+  DetailPrint "DEBUG: Exe path = $R0"
+  
+  ; Toujours essayer d'installer le HD Pack s'il est embarqué
+  DetailPrint "Attempting to install HD Pack..."
+  Nsis7z::ExtractWithDetails "$R0\hd_pack.pak" "Installing HD textures %s..."
+  Pop $1
+  DetailPrint "Nsis7z returned: [$1]"
+  
+  ${If} $1 == "success"
+    DetailPrint "✓ HD Pack installed successfully!"
+  ${ElseIf} $1 == "0"
+    DetailPrint "✓ HD Pack installed successfully! (code 0)"
+  ${Else}
+    DetailPrint "HD Pack not available or extraction failed (code: $1)"
+  ${EndIf}
 
   DetailPrint "Updating registry settings..."
   
@@ -469,6 +475,9 @@ write_config:
   SetOutPath "$INSTDIR"
   File "VanadielXI_Updater.exe"
   
+  ; Configurer l'updater pour toujours s'exécuter en administrateur
+  WriteRegStr HKLM "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers" "$INSTDIR\VanadielXI_Updater.exe" "RUNASADMIN"
+  
   ; Créer le fichier de version initial
   FileOpen $0 "$INSTDIR\version.txt" w
   FileWrite $0 "1.0.0"
@@ -477,8 +486,8 @@ write_config:
   ; Ajouter au démarrage automatique
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "VanadielXI_Updater" "$\"$INSTDIR\VanadielXI_Updater.exe$\""
   
-  ; Démarrer l'updater
-  Exec "$INSTDIR\VanadielXI_Updater.exe"
+  ; Démarrer l'updater en tant qu'administrateur
+  ExecShell "" "$INSTDIR\VanadielXI_Updater.exe" "" SW_SHOWNORMAL
   
   DetailPrint "Auto-Updater installed and started"
 
@@ -498,6 +507,7 @@ Section "Uninstall"
   Delete "$INSTDIR\version.txt"
   Delete "$INSTDIR\installer.ico"
   DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "VanadielXI_Updater"
+  DeleteRegValue HKLM "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers" "$INSTDIR\VanadielXI_Updater.exe"
 
   ; Supprimer les raccourcis
   DetailPrint "Removing shortcuts..."
