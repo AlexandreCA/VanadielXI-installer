@@ -1,0 +1,87 @@
+ZLIB License
+
+Copyright (c) 2023-2026 VanadielXI Server
+Written by Fox_Mulder
+
+This software is provided 'as-is', without any express or implied warranty.
+In no event will the authors be held liable for any damages arising from the
+use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any source distribution.
+
+---
+
+VanadielXI Auto-Updater System
+https://github.com/vanadielxi (example)
+
+This project includes:
+- VanadielXI_Updater.exe : Auto-update client application
+- update_server.php : Server-side update API
+- NSIS installer scripts : Game installation system
+
+For more information, see:
+- README.md : Complete documentation
+- SERVER_CONFIG.md : Server configuration guide
+- TESTING.md : Testing and troubleshooting guide
+
+---
+
+Third-Party Components:
+
+This software uses the following third-party components:
+
+1. .NET 6.0 Runtime
+   - License: MIT License
+   - Copyright: Microsoft Corporation
+   - https://github.com/dotnet/runtime
+
+2. System.Text.Json
+   - License: MIT License
+   - Copyright: Microsoft Corporation
+   - https://github.com/dotnet/runtime
+
+3. NSIS (Nullsoft Scriptable Install System)
+   - License: zlib/libpng License
+   - Copyright: Nullsoft and Contributors
+   - https://nsis.sourceforge.io/
+
+4. nginx
+   - License: 2-clause BSD License
+   - Copyright: Igor Sysoev, Nginx Inc.
+   - https://nginx.org/
+
+5. PHP
+   - License: PHP License v3.01
+   - Copyright: The PHP Group
+   - https://www.php.net/
+
+---
+
+DISCLAIMER:
+
+This software is a fan-made project for private server use and is not
+affiliated with, endorsed by, or connected to Square Enix Co., Ltd.
+
+FINAL FANTASY is a registered trademark of Square Enix Holdings Co., Ltd.
+
+This project is intended for educational and private server purposes only.
+Users are responsible for ensuring their use complies with all applicable
+laws and regulations.
+
+---
+
+Contact: vanadielxi@example.com (update with your contact)
+Project Started: 2023
+Last Updated: February 2026

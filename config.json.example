@@ -1,0 +1,8 @@
+{
+  "server_url": "https://vanadielxi-updates.duckdns.org/update_server.php",
+  "check_interval_minutes": 10,
+  "auto_install": false,
+  "show_notifications": true,
+  "log_enabled": true,
+  "install_path": "C:\\Program Files\\PlayOnline"
+}

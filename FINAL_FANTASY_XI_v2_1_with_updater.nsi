@@ -1,6 +1,7 @@
 ;NSIS Modern User Interface
 ;Written by Fox_Mulder
-;ZLIB License Copyright (c) 2023-2025 Vanadiel_XI Server
+;ZLIB License Copyright (c) 2023-2026 Vanadiel_XI Server
+;Modified to include VanadielXI Auto-Updater
 
 ;--------------------------------
 ;Include Modern UI
@@ -9,6 +10,7 @@
   !include "LogicLib.nsh"
   !include "FileFunc.nsh"
   !include "StrContains.nsh"
+  !include "nsDialogs.nsh"
 
   !define MUI_ICON "installer.ico"
   !define MUI_LANGDLL_WINDOWTITLE "Installer"
@@ -37,12 +39,113 @@
   RequestExecutionLevel admin
 
 ;--------------------------------
+;Installer Initialization
+
+Function .onInit
+  ; Vérifier si une installation existe déjà et utiliser son chemin
+  ReadRegStr $0 HKCU "Software\FINAL FANTASY XI" "InstallPath"
+  
+  ; Si trouvé dans le registre, vérifier que le jeu existe vraiment
+  ${If} $0 != ""
+    IfFileExists "$0\Windower4\windower.exe" 0 check_default
+      StrCpy $INSTDIR $0
+      Goto init_done
+  ${EndIf}
+  
+  check_default:
+  ; Vérifier le chemin par défaut
+  IfFileExists "$PROGRAMFILES\PlayOnline\Windower4\windower.exe" 0 init_done
+    StrCpy $INSTDIR "$PROGRAMFILES\PlayOnline"
+  
+  init_done:
+FunctionEnd
+
+;--------------------------------
 ;Interface Settings
 
   !define MUI_ABORTWARNING
 
 ;--------------------------------
-;Pages
+;Variables globales
+Var /GLOBAL InstallType
+Var /GLOBAL ExistingInstallDetected
+Var /GLOBAL InstallHDPack
+
+;--------------------------------
+;Pages Functions
+
+Function CheckExistingInstall
+  ; Vérifier si une installation existe déjà
+  StrCpy $ExistingInstallDetected "no"
+  
+  ; Vérifier si Windower4 existe
+  IfFileExists "$INSTDIR\Windower4\windower.exe" existing_found no_existing_install
+  
+  existing_found:
+    StrCpy $ExistingInstallDetected "yes"
+    
+    MessageBox MB_YESNO|MB_ICONEXCLAMATION \
+      "═══════════════════════════════════════$\n\
+      INSTALLATION EXISTANTE DÉTECTÉE$\n\
+      ═══════════════════════════════════════$\n$\n\
+      Emplacement : $INSTDIR$\n$\n\
+      ► MISE À JOUR (OUI) - Recommandé$\n\
+      • Conserve tous vos fichiers du jeu$\n\
+      • Met à jour uniquement l'Auto-Updater$\n\
+      • Installation rapide (quelques secondes)$\n$\n\
+      ► RÉINSTALLATION (NON)$\n\
+      • Réinstalle TOUT le jeu$\n\
+      • Écrase tous les fichiers existants$\n\
+      • Installation longue (plusieurs minutes)$\n$\n\
+      Voulez-vous faire une MISE À JOUR uniquement ?" \
+      IDYES update_only
+    
+    ; Réinstallation complète
+    StrCpy $InstallType "full"
+    Goto check_done
+    
+  update_only:
+    StrCpy $InstallType "update"
+    Goto check_done
+    
+  no_existing_install:
+    StrCpy $InstallType "full"
+    
+  check_done:
+FunctionEnd
+
+Function HDPackPage
+  ; Créer une page personnalisée pour demander si on installe le pack HD
+  
+  nsDialogs::Create 1018
+  Pop $0
+  
+  ${If} $0 == error
+    Abort
+  ${EndIf}
+  
+  ; Titre
+  ${NSD_CreateLabel} 0 0 100% 20u "Installation du Pack HD (Optionnel)"
+  Pop $0
+  
+  ; Description
+  ${NSD_CreateLabel} 0 25u 100% 40u "Le Pack HD améliore considérablement la qualité graphique du jeu avec des textures haute résolution.$\n$\nTaille : environ 2-3 GB supplémentaires.$\n$\nVoulez-vous installer le Pack HD ?"
+  Pop $0
+  
+  ; Case à cocher
+  ${NSD_CreateCheckbox} 10u 70u 100% 12u "Installer le Pack HD (recommandé)"
+  Pop $InstallHDPack
+  
+  ; Cocher par défaut
+  ${NSD_Check} $InstallHDPack
+  
+  ; Note en bas
+  ${NSD_CreateLabel} 10u 90u 100% 20u "Note : Vous pouvez toujours installer le Pack HD plus tard en relançant l'installateur."
+  Pop $0
+  
+  nsDialogs::Show
+FunctionEnd
+
 Function DependenciesPage
   ; Vérification des dépendances avant installation
 
@@ -55,7 +158,6 @@ Function DependenciesPage
   Var /GLOBAL DirectPlayInstalled
 
   ; --- Vérification des Visual C++ Redistributables ---
-  ; VC++ 2010 (x86)
   ReadRegDWORD $VC2010Installed HKLM "SOFTWARE\Microsoft\VisualStudio\10.0\VC\VCRedist\x86" "Installed"
   ${If} $VC2010Installed != 1
     DetailPrint "Visual C++ 2010 Redistributable not found, installing..."
@@ -66,7 +168,6 @@ Function DependenciesPage
     DetailPrint "Visual C++ 2010 Redistributable already installed."
   ${EndIf}
 
-  ; VC++ 2012 (x86)
   ReadRegDWORD $VC2012Installed HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
   ${If} $VC2012Installed != 1
     DetailPrint "Visual C++ 2012 Redistributable not found, installing..."
@@ -77,7 +178,6 @@ Function DependenciesPage
     DetailPrint "Visual C++ 2012 Redistributable already installed."
   ${EndIf}
 
-  ; VC++ 2013 (x86)
   ReadRegDWORD $VC2013Installed HKLM "SOFTWARE\Microsoft\VisualStudio\12.0\VC\Runtimes\x86" "Installed"
   ${If} $VC2013Installed != 1
     DetailPrint "Visual C++ 2013 Redistributable not found, installing..."
@@ -88,7 +188,6 @@ Function DependenciesPage
     DetailPrint "Visual C++ 2013 Redistributable already installed."
   ${EndIf}
 
-  ; VC++ 2015-2017 (x86)
   ReadRegDWORD $VC2015Installed HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x86" "Installed"
   ${If} $VC2015Installed != 1
     DetailPrint "Visual C++ 2015-2017 Redistributable not found, installing..."
@@ -100,7 +199,6 @@ Function DependenciesPage
   ${EndIf}
 
   ; --- Vérification de .NET Framework ---
-  ; .NET Framework 4.0
   ReadRegDWORD $DotNet40Installed HKLM "SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" "Install"
   ${If} $DotNet40Installed != 1
     DetailPrint ".NET Framework 4.0 not found, installing..."
@@ -111,7 +209,6 @@ Function DependenciesPage
     DetailPrint ".NET Framework 4.0 already installed."
   ${EndIf}
 
-  ; .NET Framework 4.5
   ReadRegDWORD $DotNet45Installed HKLM "SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" "Release"
   ${If} $DotNet45Installed < 378389
     DetailPrint ".NET Framework 4.5 or higher not found, installing..."
@@ -138,10 +235,15 @@ SetCompress off
 Function DependenciesLeave
 FunctionEnd
 
+;--------------------------------
+;Pages
+
   !insertmacro MUI_PAGE_WELCOME
   !insertmacro MUI_PAGE_LICENSE "license.txt"
   Page Custom DependenciesPage DependenciesLeave
   !insertmacro MUI_PAGE_DIRECTORY
+  Page Custom CheckExistingInstall
+  Page Custom HDPackPage
   !insertmacro MUI_PAGE_INSTFILES
   !insertmacro MUI_PAGE_FINISH
   !insertmacro MUI_UNPAGE_INSTFILES
@@ -169,9 +271,32 @@ Section "XIInstaller" XIInstaller
 
   File installer.ico
 
+  ; Si c'est une mise à jour uniquement, sauter l'extraction
+  ${If} $InstallType == "update"
+    DetailPrint "Mode mise à jour: conservation des fichiers existants..."
+    Goto skip_extraction
+  ${EndIf}
+
   DetailPrint "Extracting game files, please wait..."
   ${GetExePath} $R0
   Nsis7z::ExtractWithDetails "$R0\data.pak" "Installing game files %s..."
+
+  ; Vérifier si l'utilisateur a coché le pack HD
+  ${NSD_GetState} $InstallHDPack $0
+  ${If} $0 == ${BST_CHECKED}
+    DetailPrint "Installing HD Pack..."
+    IfFileExists "$R0\hd_pack.pak" 0 no_hd_pack
+      Nsis7z::ExtractWithDetails "$R0\hd_pack.pak" "Installing HD textures %s..."
+      DetailPrint "HD Pack installed successfully!"
+      Goto hd_pack_done
+    no_hd_pack:
+      DetailPrint "Warning: HD Pack file (hd_pack.pak) not found, skipping..."
+    hd_pack_done:
+  ${Else}
+    DetailPrint "HD Pack installation skipped by user."
+  ${EndIf}
+
+  skip_extraction:
 
   DetailPrint "Updating registry settings..."
   
@@ -192,85 +317,13 @@ Section "XIInstaller" XIInstaller
   WriteRegStr HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\Interface" "0001" "130b5023"
   WriteRegStr HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\Interface" "1000" "1304d1e8"
 
-  WriteRegBin HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\Product" "0001" 9741e0849e6dc5ec1220cd8c1ecd9649be988450ab9a402c58fbfb50fecae9f3bad2df087753f81d1f33e92a8e4a2faa04dff98ee20508a30fb501134eda95f3f029a5795fa83626a451c3008c52772a1ff31c0c7311d737b1f2f53375887d091a55611511ec3561d55f3a2f252171c73d2eeb09041b801bf03e3cf029869d844d0870d6453da92ee5e03acea1c93a8996abe96dddc6149b648ad02e37ab8767c61d252140618ffa22ac270845ff4419f57670816dd860827536055e29b11463260f64617e7b3c5df923688c664d38c15cfd5b967097cc2022a0135fba2df6589d4fe22e4db2e596903eb45c8a8f30780b29b30ec5e0295da24c6e9168a0590ab762f78359aa022b321feedf8d5e05da9eb59d59625389e5a8c63ba02623705b
-
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0000" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0001" 0x00000640
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0002" 0x00000384
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0003" 0x00000640
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0004" 0x00000384
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0007" 0x00000001
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0011" 0x00000001
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0017" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0018" 0x00000001
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0019" 0x00000001
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0020" 0x00000001
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0021" 0x00000001
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0022" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0023" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0024" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0028" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0029" 0x0000000c
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0030" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0031" 0x3bc49ba6
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0032" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0033" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0034" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0035" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0036" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0037" 0x00000640
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0038" 0x00000384
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0039" 0x00000001
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0040" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0041" 0x00000000
-  WriteRegStr   HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0042" "$INSTDIR\SquareEnix\FINAL FANTASY XI"
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "0043" 0x00000000
-  WriteRegBin   HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "bFirst" 00
-  WriteRegStr   HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "padsin000" "8,9,13,12,10,0,1,3,2,15,-1,-1,14,-33,-33,32,32,-36,-36,35,35,6,7,5,4,11,-1"
-  WriteRegStr   HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\FinalFantasyXI" "padmode000" "1,0,1,0,1,1"
-
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer" "FirstBootPlayMovie" 0x00000000
-  WriteRegBin HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer" "SPS000" 66c84962897d8dce4d64151db09a4ca4267c07c18b8df49c8f31a4b35a72f34cda1df301ee999021d69a2a941e91797e9b4d6d5db04a362a03ac41cdf89c6e50ed98531f457b017faa35eb0cd4cb0fea6d3852bfed8fa10351e83d64074178269644b322c6e21ef57a32b167199da82164facc60f1623623b8f8a3f3881a6d26bbd15e4dcf04012c1a91a50f2b942fa344644dac419e9aadb22489b813110830cf7a8b305ba06b8bdb8131bf2ab1f29e392f6bf43e47714d39fd00ed10369c647251aa6bc05fcf3c0210e71178ff0fe3df2548963e927f38c3bd205bed21ac6ed12fea4576c534b4bf3128c1d5fc4315f3580d03b21df18c30b11cf125f9132f980f9e7b1d8579f77a8eaf6d6426fc67e50d265f0e13a8bad5bad1bead511761c43e93b67e6428379c7a0c7ba2084db1458af16efa76a77f037484ba7e540e3e07b4f9f34df3d5b6b273174fa2f87ff2527472824fedd498385e3f48374ba7a317964db33826bd56bb5edf4acb3666d83b1accfdde4d0cb1b6a46733fca102d2d246a209d506d7c6869eeafe2dc9ed6ac9e9d64bf84d4f881db3e7425a061de002ab6043b448e9a2078c32517c6a1c9cefc8974f0d21fbcd3b80e08e0a85e915a6889912828a01cc41a8c0046fb3532b6f158ac05e45e33efdf3437643505a1839a303d7838f244f6a82e218947826d508c513a84e06906bd9677cc9226d19a350bef70802d40c7dccbbfe30f93482839f62f5b96a7ea3672e342e81598180f18c388e5615935ee097d0c880a635ab2068e093d6dfc420f49718d86b297dde1a224044311adbba93224182ef211becca81bdcfec40f80fd1a0fdef79ad744ee5329883af56497f8e6f7ed43d842573582afa93cf16cff1ca1d889a72dcdfae4f9a9956d2dfe1c7aabf514180f4f376fbb9d767da165028788aeceecfc775f440e78b3546c4fc162367c3b1ab027a25af51f97d7d11b71ac0988f712477c492775742b41069823320b3723855e5ce3d5c2dc7ae7fb409f5458c40bebe41eb23c39d99a7a09f037b06d881b1a8b4efdf2adfb96b8b9d4dcc51e3f2519a8244fbc5190ec701f73c85b9bab3e1a60d01bb0dd990f875a378aa375e302c1747f5fa99e36613740c76443af4a5d1956521830d82872d43124471af8e8b41984174404066c0cc62b1df99d6296b01496adc5a90e7241dab32ebc640dd19ff15bfd36675f45cfac7e1f0fae90f5664c5c3b4bcca4f730d24f68736e84bd7c50150571613bce014b29beb8282586931a8ceb76d7b5e2b3c3a965f35f84939162bf414cf053188bc7ae02b4a024b69c5bd3a3fa3d561a29498331841c5314a3466b194625a3f5d67e67265898c51fb6a2e62a87866364be2c3cec1389a528301e97e4ab05be3f55fc7498e559593eefff3785b4dc48217e2d1734e0d490ec0bae10b0212758567e64200e7e2b3c39ef302e666b2f4801546a3636805c9533e114b6a323d56133c88a369bda4ab8c203aff022063c816d94b504c2a393e719547a2488c5a16634abe247d292147eb4e794c6a2ce7f2478cedeb3618ce531be72abd9f63173e15cf65c7d21f44e4880b32ac2a9fb16c9378058a51e36c8bba70fdcfcb3e6b6d852f478b92a1c152a9caba215ecdc247008583e6018f3b5c61c1b10de9fe53fd68078ff2c91a57d795114a0863a81e81d5e2c024c30f99be4ec4b923776c5cbd7bd9ccde38f56b6c0180b0c9be4c1bc2307e612702e576b7990bd35fcc8251fa14e86348b8714a6ca8f1c50ae07337143c52120fd420a66a6f88cadd02e49dea36c716b3f845dc4d3fbd8db3baf966cdf68cc7875c3f881d09222cd8a9c099a91b0cf6274dc9d6d679f484d9a9597c106d172c663ce96ad8ba8efb697f6ff1ed074110869dae9159ec4d5a6f4570944db1c4baf0edb35b4e02ac1c4a81cc76d17dc69931120561550f9947b714a6a372e6daf434c08d5b2db1b2433edda30469585f12fc869c266f0cf30cc9f03bba79c9c5de6a99038158118ca4bfa029e6ee6de7d01058095175adb149fb6b520c9b1502d6bd1a220456d7536bce0cae334ce4afcd698c2dcf7c6c016cf7acf516c8193e1a0a0d75ce1f501ca53c40af5d8f5a9316739a8b577ffa2838fb83d9ac01870ec55d0f929f4adff94239a39645d931ac3733356f80f2a5fae14ff057fbaefaebf4ef1288c9e2d287fbb93c57599bb88490bd335911dd2c19ba4588fc1b4f30abdbf1bcb0305afa9670d8e198e0339a52989d3f6b25e44351754b92f66c379a93a84a85a07245d002764886c7e9f6c0249e2b3b00a4652dfb8d3b7972b6de7c1300fb8d01099d1b4bacf9cb59ddce92222f286a86c02425cb736e03c4aa0e032072853648bb2ad4e528db1be1818c5779cd8971a342f92a5c4bb933fed5635ff61589433932ea36ab61ac8720b9b2ae94f3655412d36386dd13bf55f6f49f057ace71f46de4f0a509bf7969569429134e8d9f6b42ed7bd861ba6d8ccad9f6e7bf8f8a22563edc23a448ab1ddb62338cf878a230c72aa6eb4f625cb40edc644739ebaef343c7b9473e3f1389280fc8122f5ba745d824bab71ea3eda0aaeb5224cfb27b89faa6a806e9159fc7e1f215ed5043
-
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings" "FullScreen" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings" "Language" 0x00000001
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings" "PlayAudio" 0x00000001
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings" "PlayOpeningMovie" 0x00000001
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings" "ResetSettings" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings" "SupportLanguage" 0x00000001
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings" "UseGameController" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings" "WindowH" 0x000001e0
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings" "WindowW" 0x00000280
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings" "WindowX" 0x00000082
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings" "WindowY" 0x00000082
-
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings\Controller" "AnchorDown" 0x00000034
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings\Controller" "AnchorLeft" 0x00000036
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings\Controller" "AnchorRight" 0x00000032
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings\Controller" "AnchorUp" 0x00000030
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings\Controller" "Cancel" 0x00000002
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings\Controller" "ChrCsrNext" 0x00000007
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings\Controller" "ChrCsrPrev" 0x00000006
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings\Controller" "ID" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings\Controller" "Menu" 0x00000000
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings\Controller" "Navi" 0x00000003
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings\Controller" "Ok" 0x00000001
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings\Controller" "PageNext" 0x00000005
-  WriteRegDWORD HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\Settings\Controller" "PagePrev" 0x00000004
-
-  WriteRegBin HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\SquareEnix\PlayOnlineViewer\SystemInfo\QCheck" "LastMeasurementTime" ""
+  WriteRegStr HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\Setting" "0001" "$INSTDIR\SquareEnix\FINAL FANTASY XI\User\"
+  WriteRegStr HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS\Setting" "1000" "$INSTDIR\SquareEnix\PlayOnlineViewer\"
 
   ${If} $IsUpdate == "yes"
-    CreateDirectory "$INSTDIR\..\Windower4"
-  ${Else}
-    CreateDirectory "$INSTDIR\Windower4"
-  ${EndIf}
-
-  ${If} $IsUpdate == "yes"
-    DetailPrint "Existing installation detected, checking Windower4 configuration..."
-    IfFileExists "$INSTDIR\..\Windower4\settings.xml" 0 config_missing
-      ClearErrors
-      FileOpen $0 "$INSTDIR\..\Windower4\settings.xml" r
+    DetailPrint "Existing Windower4 installation found, updating configuration..."
+    IfFileExists "$INSTDIR\Windower4\settings.xml" 0 config_missing
+      FileOpen $0 "$INSTDIR\Windower4\settings.xml" r
       StrCpy $1 ""
       StrCpy $2 ""
 read_loop:
@@ -299,10 +352,10 @@ read_done:
       FileClose $0
       StrCpy $3 "$INSTDIR\..\Windower4\xiloader.exe"
       ${If} $1 != $3
-        DetailPrint "Windower4 configuration incorrect (executable: $1), updating to $3..."
+        DetailPrint "Windower4 configuration incorrect, updating..."
         Goto write_config
       ${Else}
-        DetailPrint "Windower4 configuration is correct (executable: $1)."
+        DetailPrint "Windower4 configuration is correct."
         Goto config_done
       ${EndIf}
     config_missing:
@@ -318,10 +371,9 @@ write_config:
     DetailPrint "Creating settings.xml in $INSTDIR\Windower4"
     FileOpen $0 "$INSTDIR\Windower4\settings.xml" w
     ${If} ${Errors}
-      DetailPrint "Error: Failed to open $INSTDIR\Windower4\settings.xml for writing."
+      DetailPrint "Error: Failed to open settings.xml for writing."
       Goto no_xiloader
     ${EndIf}
-    ; Forcer UTF-8 avec BOM
     FileWriteByte $0 0xEF
     FileWriteByte $0 0xBB
     FileWriteByte $0 0xBF
@@ -359,34 +411,22 @@ write_config:
     FileWrite $0 `</settings>$\r$\n`
     FileClose $0
     ${If} ${Errors}
-      DetailPrint "Error: Failed to write to $INSTDIR\Windower4\settings.xml."
+      DetailPrint "Error: Failed to write settings.xml."
     ${Else}
-      DetailPrint "Successfully created/updated $INSTDIR\Windower4\settings.xml."
-      ; Vérifier le contenu du fichier
-      FileOpen $0 "$INSTDIR\Windower4\settings.xml" r
-      ${If} ${Errors}
-        DetailPrint "Error: Failed to read $INSTDIR\Windower4\settings.xml for verification."
-      ${Else}
-        StrCpy $1 ""
-        read_verify_loop:
-          FileRead $0 $2
-          ${If} ${Errors}
-            Goto read_verify_done
-          ${EndIf}
-          StrCpy $1 "$1$2"
-          Goto read_verify_loop
-        read_verify_done:
-        FileClose $0
-        DetailPrint "settings.xml content: $1"
-      ${EndIf}
-      ; Définir les permissions pour tous les utilisateurs
+      DetailPrint "Successfully created settings.xml."
       ExecWait 'icacls "$INSTDIR\Windower4\settings.xml" /grant Users:F'
-      DetailPrint "Set full permissions for Users on $INSTDIR\Windower4\settings.xml."
+      DetailPrint "Set permissions on settings.xml."
     ${EndIf}
     Goto config_done
   no_xiloader:
-    DetailPrint "Error: xiloader.exe not found in $INSTDIR\Windower4. Skipping settings.xml creation."
+    DetailPrint "Error: xiloader.exe not found. Skipping settings.xml creation."
   config_done:
+  
+  ; Si c'est une mise à jour uniquement, sauter l'enregistrement des DLLs
+  ${If} $InstallType == "update"
+    DetailPrint "Mode mise à jour: DLLs déjà enregistrées, skip..."
+    Goto skip_dll_registration
+  ${EndIf}
   
   DetailPrint "Registering libraries..."
   RegDLL "$INSTDIR\SquareEnix\FINAL FANTASY XI\FFXi.dll"
@@ -411,6 +451,8 @@ write_config:
   RegDLL "$INSTDIR\SquareEnix\PlayOnlineViewer\viewer\contents\PolContents.dll"
   RegDLL "$INSTDIR\SquareEnix\PlayOnlineViewer\viewer\contents\polcontentsINT.dll"
 
+  skip_dll_registration:
+
   DetailPrint "Creating Uninstaller..."
   WriteUninstaller "$INSTDIR\Uninstall FINAL FANTASY XI.exe"
 
@@ -420,7 +462,25 @@ write_config:
 
   createDirectory "$SMPROGRAMS\FINAL FANTASY XI"
   createShortCut "$SMPROGRAMS\FINAL FANTASY XI\Play FINAL FANTASY XI.lnk" "$INSTDIR\Windower4\windower.exe" "" "$INSTDIR\installer.ico"
+  createShortCut "$SMPROGRAMS\FINAL FANTASY XI\VanadielXI Auto-Updater.lnk" "$INSTDIR\VanadielXI_Updater.exe" "" "$INSTDIR\installer.ico"
   createShortCut "$SMPROGRAMS\FINAL FANTASY XI\Uninstall FINAL FANTASY XI.lnk" "$INSTDIR\Uninstall FINAL FANTASY XI.exe"
+
+  DetailPrint "Installing VanadielXI Auto-Updater..."
+  SetOutPath "$INSTDIR"
+  File "VanadielXI_Updater.exe"
+  
+  ; Créer le fichier de version initial
+  FileOpen $0 "$INSTDIR\version.txt" w
+  FileWrite $0 "1.0.0"
+  FileClose $0
+  
+  ; Ajouter au démarrage automatique
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "VanadielXI_Updater" "$\"$INSTDIR\VanadielXI_Updater.exe$\""
+  
+  ; Démarrer l'updater
+  Exec "$INSTDIR\VanadielXI_Updater.exe"
+  
+  DetailPrint "Auto-Updater installed and started"
 
 SectionEnd
 
@@ -430,6 +490,25 @@ SectionEnd
 Section "Uninstall"
   SetOutPath "$INSTDIR"
 
+  ; Arrêter et supprimer l'auto-updater
+  DetailPrint "Stopping VanadielXI Auto-Updater..."
+  nsExec::Exec 'taskkill /F /IM VanadielXI_Updater.exe'
+  Sleep 1000
+  Delete "$INSTDIR\VanadielXI_Updater.exe"
+  Delete "$INSTDIR\version.txt"
+  Delete "$INSTDIR\installer.ico"
+  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "VanadielXI_Updater"
+
+  ; Supprimer les raccourcis
+  DetailPrint "Removing shortcuts..."
+  Delete "$DESKTOP\Play FINAL FANTASY XI.lnk"
+  Delete "$SMPROGRAMS\FINAL FANTASY XI\Play FINAL FANTASY XI.lnk"
+  Delete "$SMPROGRAMS\FINAL FANTASY XI\VanadielXI Auto-Updater.lnk"
+  Delete "$SMPROGRAMS\FINAL FANTASY XI\Uninstall FINAL FANTASY XI.lnk"
+  RMDir "$SMPROGRAMS\FINAL FANTASY XI"
+
+  ; Désenregistrer les DLLs
+  DetailPrint "Unregistering DLLs..."
   UnRegDLL "$INSTDIR\SquareEnix\FINAL FANTASY XI\FFXi.dll"
   UnRegDLL "$INSTDIR\SquareEnix\FINAL FANTASY XI\FFXiMain.dll"
   UnRegDLL "$INSTDIR\SquareEnix\FINAL FANTASY XI\FFXiResource.dll"
@@ -452,15 +531,19 @@ Section "Uninstall"
   UnRegDLL "$INSTDIR\SquareEnix\PlayOnlineViewer\viewer\contents\PolContents.dll"
   UnRegDLL "$INSTDIR\SquareEnix\PlayOnlineViewer\viewer\contents\polcontentsINT.dll"
 
+  ; Supprimer les fichiers et dossiers
+  DetailPrint "Removing game files..."
   Delete "$INSTDIR\Windower4\settings.xml"
   RMDir /r "$INSTDIR\Windower4"
-
+  RMDir /r "$INSTDIR\SquareEnix"
   RMDir /r "$INSTDIR"
-  Delete "$DESKTOP\Play FINAL FANTASY XI.lnk"
-  RMDir /r "$SMPROGRAMS\FINAL FANTASY XI"
 
+  ; Nettoyer le registre
+  DetailPrint "Cleaning registry..."
   DeleteRegKey /ifempty HKCU "Software\FINAL FANTASY XI"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FINAL FANTASY XI"
   DeleteRegKey HKLM "SOFTWARE\WOW6432Node\PlayOnlineUS"
+
+  DetailPrint "Uninstallation complete!"
 
 SectionEnd
